@@ -4,6 +4,9 @@ import { Menu } from '@/components/Menu'
 import { MatchScreen } from '@/components/MatchScreen'
 import { FriendLobby } from '@/components/FriendLobby'
 import { Leaderboard } from '@/components/Leaderboard'
+import { OnlineHome, type Invite } from '@/online/OnlineHome'
+import { OnlineMatchScreen } from '@/online/OnlineMatchScreen'
+import { isBytes32 } from '@/online/helpers'
 import { isRoomId, type FriendLink } from '@/game/peer'
 import { loadJersey, type Jersey } from '@/game/storage'
 import { setMuted } from '@/game/audio'
@@ -12,6 +15,8 @@ import type { Team } from '@/game/logic'
 
 type Screen =
   | { name: 'menu' }
+  | { name: 'onlineHome' }
+  | { name: 'online'; id: bigint }
   | { name: 'lobby'; role: 'host' | 'guest'; room: string | null }
   | {
       name: 'match'
@@ -38,12 +43,20 @@ function readInvite(): string | null {
 }
 
 // One remembered mute choice drives both the whistle and the crowd sounds.
+function readOnlineInvite(): Invite | null {
+  const idText = new URLSearchParams(window.location.search).get('match')
+  const code = window.location.hash.slice(1)
+  if (!idText || !/^\d{1,18}$/.test(idText) || !isBytes32(code)) return null
+  return { id: BigInt(idText), code }
+}
+
 setMuted(isMuted())
 // The first tap anywhere unlocks audio for browsers that block it until a gesture.
 window.addEventListener('pointerdown', unlockAudio, { once: true, capture: true })
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>({ name: 'menu' })
+  const [onlineInvite, setOnlineInvite] = useState<Invite | null>(readOnlineInvite)
+  const [screen, setScreen] = useState<Screen>(() => (readOnlineInvite() ? { name: 'onlineHome' } : { name: 'menu' }))
   const [jersey, setJersey] = useState<Jersey>(loadJersey)
   const [invite, setInvite] = useState<string | null>(readInvite)
   const [counter, setCounter] = useState(0)
@@ -89,6 +102,16 @@ export default function App() {
     setScreen({ name: 'menu' })
   }
 
+  const leaveOnline = () => {
+    if (onlineInvite && window.location.search) window.history.replaceState(null, '', window.location.pathname)
+    setOnlineInvite(null)
+    setScreen({ name: 'menu' })
+  }
+
+  if (screen.name === 'online') {
+    return <OnlineMatchScreen key={screen.id.toString()} matchId={screen.id} onExit={() => setScreen({ name: 'onlineHome' })} />
+  }
+
   if (screen.name === 'match') {
     return (
       <MatchScreen
@@ -117,7 +140,17 @@ export default function App() {
           </ConnectKitButton.Custom>
         </header>
 
-        {screen.name === 'lobby' ? (
+        {screen.name === 'onlineHome' ? (
+          <OnlineHome
+            invite={onlineInvite}
+            onEnter={(id) => {
+              setOnlineInvite(null)
+              if (window.location.search || window.location.hash) window.history.replaceState(null, '', window.location.pathname)
+              setScreen({ name: 'online', id })
+            }}
+            onBack={leaveOnline}
+          />
+        ) : screen.name === 'lobby' ? (
           <FriendLobby
             key={`${screen.role}-${screen.room ?? 'host'}`}
             role={screen.role}
@@ -142,6 +175,7 @@ export default function App() {
                 onRanked={() => startBot(true)}
                 onPractice={() => startBot(false)}
                 onHost={() => setScreen({ name: 'lobby', role: 'host', room: null })}
+                onOnline={() => setScreen({ name: 'onlineHome' })}
                 onJoinInvite={() => invite && setScreen({ name: 'lobby', role: 'guest', room: invite })}
               />
             </div>

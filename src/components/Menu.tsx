@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { Bot, Swords, Users } from 'lucide-react'
+import { Bot, Globe, Swords, Users } from 'lucide-react'
 import { SaveResult } from './SaveResult'
 import { clearPending, loadPending, saveJersey, type Jersey } from '@/game/storage'
 import { sfx } from '@/game/audio'
@@ -16,9 +16,10 @@ interface Props {
   onPractice: () => void
   onHost: () => void
   onJoinInvite: () => void
+  onOnline: () => void
 }
 
-export function Menu({ jersey, onJersey, invited, onRanked, onPractice, onHost, onJoinInvite }: Props) {
+export function Menu({ jersey, onJersey, invited, onRanked, onPractice, onHost, onJoinInvite, onOnline }: Props) {
   const { address } = useAccount()
   const [pending, setPending] = useState(loadPending)
 
@@ -114,6 +115,9 @@ export function Menu({ jersey, onJersey, invited, onRanked, onPractice, onHost, 
         )}
         <button type="button" className={`btn ${invited ? 'btn-ghost' : 'btn-primary'}`} onClick={go(onRanked)}>
           <Swords size={18} /> Ranked match vs bot
+        </button>
+        <button type="button" className="btn btn-ghost" onClick={go(onOnline)}>
+          <Globe size={18} /> Online match (two wallets, onchain)
         </button>
         <div className="grid grid-cols-2 gap-2">
           <button type="button" className="btn btn-ghost" onClick={go(onPractice)}>

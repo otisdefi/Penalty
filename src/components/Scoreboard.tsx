@@ -13,6 +13,8 @@ interface Props {
   done: boolean
   choosing: boolean
   secondsLeft: number
+  /** Length of the countdown in seconds (defaults to the offline 10 seconds). */
+  totalSeconds?: number
 }
 
 function Circle({ result, next }: { result: boolean | undefined; next: boolean }) {
@@ -87,7 +89,7 @@ function Row({ team, kit, name, isMe, acting, results, slots, score, nextIndex }
   )
 }
 
-export function Scoreboard({ status, kicksTaken, kits, myTeam, rivalName, shooterTeam, done, choosing, secondsLeft }: Props) {
+export function Scoreboard({ status, kicksTaken, kits, myTeam, rivalName, shooterTeam, done, choosing, secondsLeft, totalSeconds = CHOICE_SECONDS }: Props) {
   const suddenDeath = kicksTaken >= REGULATION * 2
   const round = Math.floor(kicksTaken / 2) + 1
   const title = done ? 'Full time' : suddenDeath ? `Sudden death · Round ${round}` : `Round ${round} of ${REGULATION}`
@@ -107,7 +109,7 @@ export function Scoreboard({ status, kicksTaken, kits, myTeam, rivalName, shoote
           aria-label={choosing ? `${secondsLeft} seconds left` : 'Timer paused'}
         >
           <Timer size={16} />
-          {choosing ? secondsLeft : CHOICE_SECONDS}
+          {choosing ? secondsLeft : totalSeconds}
         </span>
       </div>
       <div className="h-[3px] overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }} aria-hidden>
@@ -115,7 +117,7 @@ export function Scoreboard({ status, kicksTaken, kits, myTeam, rivalName, shoote
           className="h-full rounded-full"
           style={{
             background: YELLOW,
-            width: `${choosing ? (secondsLeft / CHOICE_SECONDS) * 100 : 100}%`,
+            width: `${choosing ? (Math.min(secondsLeft, totalSeconds) / totalSeconds) * 100 : 100}%`,
             transition: 'width 1s linear',
             opacity: choosing ? 1 : 0.3,
           }}

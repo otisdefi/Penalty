@@ -14,6 +14,16 @@ Tiebreaker: a penalty shootout game (best of five, sudden death). Modes: ranked 
 
 - PenaltyLeaderboard on Arc Testnet: `0x1df2ff3dd51acb1683781dd5d2808ca338047f4c` (read from `VITE_LEADERBOARD_ADDRESS` in `.env`; ABI in `src/contract.ts`). Results are self-reported, so it is not cheat-proof.
 
+- PenaltyMatch on Arc Testnet: `0x8093487cdfdcb6a31e371742a400ec203794c575` (read from `VITE_MATCH_ADDRESS`; ABI in `src/online/abi.ts`, regenerate with `bun run abi:match`). Verified on the Arc Testnet explorer. Two-wallet commit/reveal shootouts, 20 second steps, permissionless `claimTimeout`, ranked quick-match queue, verified leaderboard.
+- Older unused leaderboard version: `0x988c32e64ff107a7b355db244b6e3c4c67ab2d6a` (incompatible with the current source; ignore).
+
+## Online match notes
+
+- `src/online/`: `OnlineHome` (create, join by link, quick match), `OnlineLobby`, `OnlineMatchScreen`, `useOnlineMatch` (polling, commit/reveal, forfeit), `useOnlineEntry`.
+- A one-time helper key (stored in this browser's localStorage, funded at room creation) signs commits and reveals so the wallet is asked once. The room code lives only in the share link's `#fragment`.
+- Commit hash is `keccak256(abi.encodePacked(id, kick, MAIN wallet, dir, salt))`. Gas estimates are padded by 50% because the RPC sometimes under-estimates.
+- `scripts/e2e-match.ts` runs the whole flow against an anvil fork of Arc Testnet.
+
 ## Layout
 
 - `src/game/`: pure logic (`logic.ts`), bot (`bot.ts`), audio, local storage, PeerJS wrapper (`peer.ts`)

@@ -1,0 +1,819 @@
+{
+  "contractAddress": "0x8093487cdfdcb6a31e371742a400ec203794c575",
+  "network": "ARC-TESTNET",
+  "deployerWalletId": "3c2464b2-8369-52e2-a782-800bbeca5396",
+  "contract_code_path": "/home/user/app/contracts/PenaltyMatch.sol",
+  "contract_compiled_code_path": "/home/user/app/contracts/out/PenaltyMatch.sol/PenaltyMatch.json",
+  "contract_network_and_links": {
+    "Arc Testnet": "https://explorer.testnet.arc.io/address/0x8093487cdfdcb6a31e371742a400ec203794c575"
+  },
+  "contract_deployments": [
+    {
+      "chain": "Arc Testnet",
+      "address": "0x8093487cdfdcb6a31e371742a400ec203794c575",
+      "explorerUrl": "https://explorer.testnet.arc.io/address/0x8093487cdfdcb6a31e371742a400ec203794c575",
+      "txHash": "0xe741b10fd6cae4981ffe7e8fcd33502b4118f7e35738873ec96dd415c40f3aec",
+      "deployedAt": "2026-11-03T20:23:12.940Z"
+    }
+  ],
+  "abi": [
+    {
+      "type": "function",
+      "name": "MAX_KICKS",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "QUEUE_TTL",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "REGULATION_KICKS",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "STEP_TIMEOUT",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "cancelMatch",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "claimTimeout",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "commit",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "hash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "commitHash",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "kick",
+          "type": "uint16",
+          "internalType": "uint16"
+        },
+        {
+          "name": "player",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "dir",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "salt",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "createMatch",
+      "inputs": [
+        {
+          "name": "codeHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "sessionKey",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "payable"
+    },
+    {
+      "type": "function",
+      "name": "currentMatch",
+      "inputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getMatch",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct PenaltyMatch.Match",
+          "components": [
+            {
+              "name": "p1",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "p2",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "key1",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "key2",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "codeHash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "commit1",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "commit2",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "revealed1",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "revealed2",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "dir1",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "dir2",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "deadline",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "createdAt",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "createdBlock",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "kicks",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "score1",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "score2",
+              "type": "uint16",
+              "internalType": "uint16"
+            },
+            {
+              "name": "goalBits",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "lastShot",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "lastDive",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "lastGoal",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "ranked",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "status",
+              "type": "uint8",
+              "internalType": "enum PenaltyMatch.Status"
+            },
+            {
+              "name": "phase",
+              "type": "uint8",
+              "internalType": "enum PenaltyMatch.Phase"
+            },
+            {
+              "name": "winner",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getRecord",
+      "inputs": [
+        {
+          "name": "player",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "wins",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "losses",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "streak",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "bestStreak",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getTopTen",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "players",
+          "type": "address[10]",
+          "internalType": "address[10]"
+        },
+        {
+          "name": "wins",
+          "type": "uint32[10]",
+          "internalType": "uint32[10]"
+        },
+        {
+          "name": "streaks",
+          "type": "uint32[10]",
+          "internalType": "uint32[10]"
+        },
+        {
+          "name": "bestStreaks",
+          "type": "uint32[10]",
+          "internalType": "uint32[10]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "joinMatch",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "roomCode",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "sessionKey",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "payable"
+    },
+    {
+      "type": "function",
+      "name": "queuedMatch",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "quickMatch",
+      "inputs": [
+        {
+          "name": "sessionKey",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "matched",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "payable"
+    },
+    {
+      "type": "function",
+      "name": "records",
+      "inputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "wins",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "losses",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "streak",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "bestStreak",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "reveal",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "dir",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "salt",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "event",
+      "name": "Committed",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "kick",
+          "type": "uint16",
+          "indexed": false,
+          "internalType": "uint16"
+        },
+        {
+          "name": "player",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "KickResolved",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "kickIndex",
+          "type": "uint16",
+          "indexed": false,
+          "internalType": "uint16"
+        },
+        {
+          "name": "shooter",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        },
+        {
+          "name": "shot",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        },
+        {
+          "name": "dive",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        },
+        {
+          "name": "goal",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        },
+        {
+          "name": "score1",
+          "type": "uint16",
+          "indexed": false,
+          "internalType": "uint16"
+        },
+        {
+          "name": "score2",
+          "type": "uint16",
+          "indexed": false,
+          "internalType": "uint16"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "MatchCancelled",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "MatchCreated",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "creator",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        },
+        {
+          "name": "ranked",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "MatchFinished",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "winner",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        },
+        {
+          "name": "forfeit",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "MatchJoined",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "player",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Revealed",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "kick",
+          "type": "uint16",
+          "indexed": false,
+          "internalType": "uint16"
+        },
+        {
+          "name": "player",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        },
+        {
+          "name": "dir",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "error",
+      "name": "AlreadyCommitted",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "AlreadyInMatch",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "AlreadyRevealed",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "BadCode",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "BadReveal",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "ForwardFailed",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidDirection",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidPhase",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidStatus",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NotCreator",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NotExpired",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NotSeat",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "RecordOverflow",
+      "inputs": [
+        {
+          "name": "player",
+          "type": "address",
+          "internalType": "address"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "ReentrantCall",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SelfJoin",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SessionKeyInvalid",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "StepExpired",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "ZeroCommit",
+      "inputs": []
+    }
+  ]
+}

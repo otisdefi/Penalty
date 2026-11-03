@@ -14,7 +14,8 @@
     "contracts:build": "forge build",
     "contracts:test": "forge test",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "abi:match": "bun run ./scripts/gen-match-abi.ts"
   },
   "dependencies": {
     "@circle-fin/adapter-viem-v2": "^1.19.2",
