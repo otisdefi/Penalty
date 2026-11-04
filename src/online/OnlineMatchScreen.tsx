@@ -7,7 +7,7 @@ import Pitch from '@/components/Pitch'
 import { Scoreboard } from '@/components/Scoreboard'
 import { penaltyMatchAbi } from './abi'
 import { MATCH_ADDRESS, ONLINE_CHAIN_ID, STEP_TIMEOUT_S } from './config'
-import { kickFlags, sameAddress, slotsFor } from './helpers'
+import { ZERO_ADDRESS, kickFlags, sameAddress, slotsFor } from './helpers'
 import { OnlineLobby } from './OnlineLobby'
 import { useOnlineMatch } from './useOnlineMatch'
 import { loadStored } from './storage'
@@ -15,6 +15,7 @@ import { loadJersey, type Jersey } from '@/game/storage'
 import type { Status, Team } from '@/game/logic'
 import { setMuted as setAudioMuted, sfx } from '@/game/audio'
 import { isMuted, setMuted as setWhistleMuted } from '@/lib/whistle'
+import { shortAddress } from '@/lib/errors'
 import { textOn, YELLOW } from '@/lib/color'
 import { buildTxExplorerUrl, requireChain } from '@/onchain-facts'
 
@@ -128,6 +129,8 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
   const canPick = stage === 'choose' && !o.anim && !o.busy
   const timerOn = stage === 'choose' || stage === 'committed' || stage === 'reveal' || stage === 'revealed'
   const myKit = kits[o.myTeam]
+  const rivalAddress = o.mySeat === 2 ? m.p1 : m.p2
+  const rivalLabel = o.mySeat !== 0 && rivalAddress !== ZERO_ADDRESS ? shortAddress(rivalAddress) : 'Opponent'
   const showResult = finished && !o.anim
 
   return (
@@ -149,7 +152,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
         className="relative mx-auto overflow-hidden rounded-3xl"
         style={{ border: '1px solid var(--line)', aspectRatio: '320 / 360', width: 'min(100%, calc(48dvh * 320 / 360))' }}
       >
-        <Pitch kick={o.anim} kits={kits} pick={o.pick} role={iShoot ? 'shoot' : 'dive'} shooterTeam={shooterTeam} myTeam={o.myTeam} />
+        <Pitch kick={o.anim} kits={kits} pick={o.pick} role={iShoot ? 'shoot' : 'dive'} shooterTeam={shooterTeam} myTeam={o.myTeam} rivalLabel={rivalLabel} />
         {o.anim && (
           <div
             key={m.kicks}

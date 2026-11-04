@@ -120,7 +120,31 @@ input:focus-visible {
   }
 }
 
+/* Net ripples when the ball hits it (the ball arrives about 430 ms after the kick). */
+.net-ripple {
+  animation: net-ripple 650ms ease-out 420ms both;
+}
+
+@keyframes net-ripple {
+  0% {
+    transform: scale(1, 1);
+  }
+  25% {
+    transform: scale(1.035, 1.14) translateY(2px);
+  }
+  55% {
+    transform: scale(0.99, 1.04) translateY(1px);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .net-ripple {
+    animation: none !important;
+  }
+
   .banner {
     animation: none !important;
     opacity: 1;

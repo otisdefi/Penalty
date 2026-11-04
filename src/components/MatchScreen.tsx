@@ -99,7 +99,7 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, onExi
         className="relative mx-auto overflow-hidden rounded-3xl"
         style={{ border: '1px solid var(--line)', aspectRatio: '320 / 360', width: 'min(100%, calc(48dvh * 320 / 360))' }}
       >
-        <Pitch kick={m.anim} kits={kits} pick={m.myPick} role={m.role} shooterTeam={shooterTeam} myTeam={myTeam} />
+        <Pitch kick={m.anim} kits={kits} pick={m.myPick} role={m.role} shooterTeam={shooterTeam} myTeam={myTeam} rivalLabel={rivalName} />
         {m.anim && (
           <div
             key={m.kicks.length}
