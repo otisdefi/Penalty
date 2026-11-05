@@ -10,7 +10,7 @@ Built with [Arc Studio](https://studio.arc.io)
 - Friend matches over a shareable link (peer to peer, free, not saved to the leaderboard)
 - Online matches between two wallets on Arc Testnet: private rooms with a share link, a ranked quick-match queue, hidden moves that both players reveal, a 20 second deadline per step with a forfeit claim, and a verified leaderboard
 - Customize screen with live preview: shirt colour, pattern, secondary colour, number and name tag; ball design and trail; stadium theme (day, night, rainy, sunset, snow)
-- Basic items are free; others unlock with ranked wins or a win streak (tied to your wallet's onchain record, so they follow you across devices)
+- Every colour, pattern, ball, trail and stadium is available to everyone from the start
 - Onchain top ten by wins, plus your own wins, losses and streaks
 - Sound effects with a mute toggle
 

@@ -10,7 +10,7 @@ import { isBytes32 } from '@/online/helpers'
 import { isRoomId, type FriendLink } from '@/game/peer'
 import type { Jersey } from '@/game/storage'
 import { CustomizeScreen } from '@/cosmetics/CustomizeScreen'
-import { useEffectiveCosmetics } from '@/cosmetics/useUnlocks'
+import { useCosmetics } from '@/cosmetics/store'
 import type { StadiumId } from '@/cosmetics/types'
 import { TestnetBadge } from '@/components/TestnetBadge'
 import { setMuted } from '@/game/audio'
@@ -64,7 +64,7 @@ window.addEventListener('pointerdown', unlockAudio, { once: true, capture: true 
 export default function App() {
   const [onlineInvite, setOnlineInvite] = useState<Invite | null>(readOnlineInvite)
   const [screen, setScreen] = useState<Screen>(() => (readOnlineInvite() ? { name: 'onlineHome' } : { name: 'menu' }))
-  const cosmetics = useEffectiveCosmetics()
+  const cosmetics = useCosmetics()
   const jersey = cosmetics.jersey
   const stadium = cosmetics.stadium
   const [invite, setInvite] = useState<string | null>(readInvite)

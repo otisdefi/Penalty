@@ -12,7 +12,7 @@ import { OnlineLobby } from './OnlineLobby'
 import { useOnlineMatch } from './useOnlineMatch'
 import { loadStored } from './storage'
 import type { Jersey } from '@/game/storage'
-import { useEffectiveCosmetics } from '@/cosmetics/useUnlocks'
+import { useCosmetics } from '@/cosmetics/store'
 import type { Look } from '@/cosmetics/types'
 import { useCosmeticSync } from './useCosmeticSync'
 import type { Status, Team } from '@/game/logic'
@@ -36,7 +36,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
   const { address } = useAccount()
   const publicClient = usePublicClient({ chainId: ONLINE_CHAIN_ID })
   const [muted, setMutedState] = useState(isMuted)
-  const mine = useEffectiveCosmetics()
+  const mine = useCosmetics()
   const jersey = mine.jersey
   const { m, stage } = o
   const myJersey = jersey

@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ArrowLeft, Lock, Minus, Plus, Zap } from 'lucide-react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { ArrowLeft, Minus, Plus, Zap } from 'lucide-react'
 import Pitch from '@/components/Pitch'
 import { TestnetBadge } from '@/components/TestnetBadge'
 import type { Kick } from '@/game/logic'
 import { BallArt, JerseyDot, STADIUM_PALETTE } from './art'
-import { BALLS, COLORS, PATTERNS, STADIUMS, TRAILS, isUnlocked, requirementLabel, type Requirement } from './catalog'
+import { BALLS, COLORS, PATTERNS, STADIUMS, TRAILS } from './catalog'
 import { TAG_MAX, tagMessage, tagProblem, trimTag } from './nameFilter'
-import { applyUnlocks, setCosmetics, useCosmetics } from './store'
+import { setCosmetics, useCosmetics } from './store'
 import { DEFAULT_LOOK, type Jersey, type Look, type StadiumId } from './types'
-import { useUnlockStats } from './useUnlocks'
 
 type Tab = 'jersey' | 'ball' | 'stadium'
 
@@ -28,19 +27,15 @@ function SectionTitle({ children }: { children: ReactNode }) {
   )
 }
 
-/** One selectable item. Locked items stay visible but greyed out with what it takes to unlock them. */
+/** One selectable item. */
 function Choice({
   selected,
-  locked,
-  req,
   label,
   onClick,
   className = '',
   children,
 }: {
   selected: boolean
-  locked: boolean
-  req: Requirement
   label: string
   onClick: () => void
   className?: string
@@ -49,56 +44,43 @@ function Choice({
   return (
     <button
       type="button"
-      disabled={locked}
       aria-pressed={selected}
-      aria-label={locked ? `${label}, locked: ${requirementLabel(req)}` : label}
-      title={locked ? `Locked: ${requirementLabel(req)}` : label}
+      aria-label={label}
       onClick={onClick}
       className={`relative flex flex-col items-center justify-center gap-1 rounded-2xl p-2 text-center transition active:scale-95 ${className}`}
       style={{
         background: selected ? 'rgba(198,255,61,0.12)' : 'rgba(255,255,255,0.05)',
         boxShadow: selected ? '0 0 0 2px var(--lime)' : 'inset 0 0 0 1px rgba(255,255,255,0.1)',
-        opacity: locked ? 0.4 : 1,
-        cursor: locked ? 'not-allowed' : 'pointer',
+        cursor: 'pointer',
         minHeight: 44,
       }}
     >
       {children}
       <span className="text-[11px] font-semibold leading-tight">{label}</span>
-      {locked && (
-        <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.04em]" style={{ color: 'var(--lime)' }}>
-          <Lock size={10} aria-hidden /> {requirementLabel(req)}
-        </span>
-      )}
     </button>
   )
 }
 
-function Swatch({ color, label, selected, locked, req, onClick }: { color: string; label: string; selected: boolean; locked: boolean; req: Requirement; onClick: () => void }) {
+function Swatch({ color, label, selected, onClick }: { color: string; label: string; selected: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
-      disabled={locked}
       aria-pressed={selected}
-      aria-label={locked ? `${label}, locked: ${requirementLabel(req)}` : label}
-      title={locked ? `${label}: ${requirementLabel(req)}` : label}
+      aria-label={label}
+      title={label}
       onClick={onClick}
       className="relative flex h-11 w-11 items-center justify-center rounded-full transition active:scale-95"
       style={{
         background: color,
-        opacity: locked ? 0.35 : 1,
-        cursor: locked ? 'not-allowed' : 'pointer',
+        cursor: 'pointer',
         boxShadow: selected ? '0 0 0 2px var(--bg), 0 0 0 4px var(--lime)' : '0 0 0 1px rgba(255,255,255,0.25)',
       }}
-    >
-      {locked && <Lock size={14} color="#fff" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }} aria-hidden />}
-    </button>
+    />
   )
 }
 
 export function CustomizeScreen({ onBack }: { onBack: () => void }) {
   const raw = useCosmetics()
-  const unlock = useUnlockStats()
   const [tab, setTab] = useState<Tab>('jersey')
   const [kick, setKick] = useState<Kick | null>(null)
   const [tagDraft, setTagDraft] = useState(raw.jersey.tag ?? '')
@@ -112,10 +94,8 @@ export function CustomizeScreen({ onBack }: { onBack: () => void }) {
     [],
   )
 
-  // What the game will really use (anything locked falls back to a free default).
-  const c = useMemo(() => applyUnlocks(raw, unlock), [raw, unlock])
+  const c = raw
   const look: Look = { ...DEFAULT_LOOK, ball: c.ball, trail: c.trail, stadium: c.stadium }
-  const open = (req: Requirement) => isUnlocked(req, unlock)
   const jersey = raw.jersey
 
   const setJersey = (patch: Partial<Jersey>) => setCosmetics((cur) => ({ ...cur, jersey: { ...cur.jersey, ...patch } }))
@@ -134,8 +114,6 @@ export function CustomizeScreen({ onBack }: { onBack: () => void }) {
     setJersey({ tag: problem ? '' : cleaned.trim() })
   }
 
-  const lockedColors = COLORS.filter((x) => !open(x.req))
-
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-3 px-4 pb-10 pt-3">
       <header className="flex items-center justify-between">
@@ -153,11 +131,6 @@ export function CustomizeScreen({ onBack }: { onBack: () => void }) {
       <button type="button" className="btn btn-ghost" style={{ minHeight: 44 }} onClick={testKick}>
         <Zap size={16} /> Test kick
       </button>
-
-      <p className="text-center text-xs text-pretty" style={{ color: 'var(--muted)' }}>
-        {unlock.wins} ranked {unlock.wins === 1 ? 'win' : 'wins'} · best streak {unlock.bestStreak}.{' '}
-        {unlock.fromChain ? 'Includes your wallet record, so unlocks follow you to any device.' : 'Connect a wallet to keep unlocks on any device.'}
-      </p>
 
       <div className="grid grid-cols-3 gap-1 rounded-full p-1" role="tablist" style={{ background: 'rgba(255,255,255,0.06)' }}>
         {TABS.map((t) => (
@@ -181,21 +154,16 @@ export function CustomizeScreen({ onBack }: { onBack: () => void }) {
             <SectionTitle>Main colour</SectionTitle>
             <div className="flex flex-wrap gap-2">
               {COLORS.map((x) => (
-                <Swatch key={x.id} color={x.id} label={x.label} selected={jersey.color === x.id} locked={!open(x.req)} req={x.req} onClick={() => setJersey({ color: x.id })} />
+                <Swatch key={x.id} color={x.id} label={x.label} selected={jersey.color === x.id} onClick={() => setJersey({ color: x.id })} />
               ))}
             </div>
-            {lockedColors.length > 0 && (
-              <p className="mt-2 text-[11px]" style={{ color: 'var(--subtle)' }}>
-                Locked: {lockedColors.map((x) => `${x.label} (${requirementLabel(x.req)})`).join(' · ')}
-              </p>
-            )}
           </div>
 
           <div>
             <SectionTitle>Pattern</SectionTitle>
             <div className="grid grid-cols-3 gap-2">
               {PATTERNS.map((p) => (
-                <Choice key={p.id} selected={(jersey.pattern ?? 'solid') === p.id} locked={!open(p.req)} req={p.req} label={p.label} onClick={() => setJersey({ pattern: p.id })}>
+                <Choice key={p.id} selected={(jersey.pattern ?? 'solid') === p.id} label={p.label} onClick={() => setJersey({ pattern: p.id })}>
                   <svg viewBox="-13 -13 26 26" className="h-9 w-9" aria-hidden>
                     <JerseyDot jersey={{ ...jersey, pattern: p.id }} number={jersey.number} r={12} fontSize={11} />
                   </svg>
@@ -208,7 +176,7 @@ export function CustomizeScreen({ onBack }: { onBack: () => void }) {
             <SectionTitle>Secondary colour</SectionTitle>
             <div className="flex flex-wrap gap-2">
               {COLORS.map((x) => (
-                <Swatch key={x.id} color={x.id} label={x.label} selected={jersey.secondary === x.id} locked={!open(x.req)} req={x.req} onClick={() => setJersey({ secondary: x.id })} />
+                <Swatch key={x.id} color={x.id} label={x.label} selected={jersey.secondary === x.id} onClick={() => setJersey({ secondary: x.id })} />
               ))}
             </div>
             {(jersey.pattern ?? 'solid') === 'solid' && (
@@ -279,7 +247,7 @@ export function CustomizeScreen({ onBack }: { onBack: () => void }) {
             <SectionTitle>Ball design</SectionTitle>
             <div className="grid grid-cols-3 gap-2">
               {BALLS.map((b) => (
-                <Choice key={b.id} selected={raw.ball === b.id} locked={!open(b.req)} req={b.req} label={b.label} onClick={() => setCosmetics({ ball: b.id })}>
+                <Choice key={b.id} selected={raw.ball === b.id} label={b.label} onClick={() => setCosmetics({ ball: b.id })}>
                   <svg viewBox="-10 -10 20 20" className="h-11 w-11" aria-hidden>
                     <BallArt design={b.id} />
                   </svg>
@@ -291,7 +259,7 @@ export function CustomizeScreen({ onBack }: { onBack: () => void }) {
             <SectionTitle>Ball trail</SectionTitle>
             <div className="grid grid-cols-2 gap-2">
               {TRAILS.map((t) => (
-                <Choice key={t.id} selected={raw.trail === t.id} locked={!open(t.req)} req={t.req} label={t.label} onClick={() => setCosmetics({ trail: t.id })}>
+                <Choice key={t.id} selected={raw.trail === t.id} label={t.label} onClick={() => setCosmetics({ trail: t.id })}>
                   <span className="h-1" />
                 </Choice>
               ))}
@@ -308,7 +276,7 @@ export function CustomizeScreen({ onBack }: { onBack: () => void }) {
           </p>
           <div className="grid grid-cols-2 gap-2">
             {STADIUMS.map((s) => (
-              <Choice key={s.id} selected={raw.stadium === s.id} locked={!open(s.req)} req={s.req} label={s.label} onClick={() => setCosmetics({ stadium: s.id })}>
+              <Choice key={s.id} selected={raw.stadium === s.id} label={s.label} onClick={() => setCosmetics({ stadium: s.id })}>
                 <StadiumThumb stadium={s.id} />
               </Choice>
             ))}

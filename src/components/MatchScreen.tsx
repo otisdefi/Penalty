@@ -11,8 +11,7 @@ import type { FriendLink } from '@/game/peer'
 import { textOn, YELLOW } from '@/lib/color'
 import { isMuted, setMuted as setWhistleMuted } from '@/lib/whistle'
 import { useAccount } from 'wagmi'
-import { useEffectiveCosmetics } from '@/cosmetics/useUnlocks'
-import { recordRankedResult } from '@/cosmetics/store'
+import { useCosmetics } from '@/cosmetics/store'
 import type { Look, StadiumId } from '@/cosmetics/types'
 
 interface Props {
@@ -32,7 +31,7 @@ const KEEP_LABELS = ['DIVE LEFT', 'STAY', 'DIVE RIGHT'] as const
 
 export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadium, onExit }: Props) {
   const m = useMatch({ mode, myTeam, link })
-  const mine = useEffectiveCosmetics()
+  const mine = useCosmetics()
   const look: Look = { ball: mine.ball, trail: mine.trail, stadium: stadium ?? mine.stadium }
   const { address } = useAccount()
   const [muted, setMutedState] = useState(isMuted)
@@ -48,7 +47,6 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
   useEffect(() => {
     if (done && ranked && mode === 'bot') {
       savePending({ matchId: m.matchId, won: m.won, address: address ?? '' })
-      recordRankedResult(m.won, m.matchId) // counts toward cosmetic unlocks
     }
   }, [done, ranked, mode, m.matchId, m.won, address])
 

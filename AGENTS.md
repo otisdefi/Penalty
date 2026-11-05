@@ -26,10 +26,8 @@ Tiebreaker: a penalty shootout game (best of five, sudden death). Modes: ranked 
 
 ## Customization
 
-- `src/cosmetics/`: `catalog.ts` (items and unlock rules), `store.ts` (saved choices and ranked stats, localStorage with try/catch), `useUnlocks.ts` (merges browser stats with the wallet's onchain records from both contracts), `art.tsx` (jersey patterns, balls, trails, stadium themes), `nameFilter.ts` (name tag: 8 chars, no links, blocked words), `validate.ts` (parses shirts received from other players), `CustomizeScreen.tsx`.
-- Locked choices are swapped for free defaults by `applyUnlocks` wherever the game draws them.
+- `src/cosmetics/`: `catalog.ts` (all items, none locked), `store.ts` (saved choices, localStorage with try/catch), `art.tsx` (jersey patterns, balls, trails, stadium themes), `nameFilter.ts` (name tag: 8 chars, no links, blocked words), `validate.ts` (parses shirts received from other players), `CustomizeScreen.tsx`.
 - Online matches share looks over a direct PeerJS link (`src/online/useCosmeticSync.ts`, ids derived from match id, seat and wallet). The contract only stores moves. Received data is validated, display only. The home player's stadium is shown to both.
-- The offline leaderboard is self-reported, so unlocks are cosmetic only.
 
 ## Layout
 
