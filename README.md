@@ -39,6 +39,8 @@ Other commands:
 
 - `VITE_LEADERBOARD_ADDRESS`: address of the deployed leaderboard contract on Arc Testnet (offline ranked results).
 - `VITE_MATCH_ADDRESS`: address of the deployed online match contract on Arc Testnet.
+- `VITE_TURN_URLS`, `VITE_TURN_USERNAME`, `VITE_TURN_CREDENTIAL` (optional, set all three): a TURN relay so friend matches also connect on strict mobile or office networks. These are visible in the built app, so use browser-safe, usage-limited credentials.
+- `VITE_PEER_HOST`, `VITE_PEER_PORT`, `VITE_PEER_PATH`, `VITE_PEER_SECURE` (optional): use your own PeerJS matchmaking server instead of the free PeerJS cloud.
 - `RPC_PROXY_BASE_URL`, `RPC_PROXY_TOKEN`, `RPC_PROXY_CHAINS`: optional outside Arc Studio. Provisioned by Arc Studio for RPC access.
 
 You need a wallet with a little Arc Testnet USDC (used for gas) to save a result.

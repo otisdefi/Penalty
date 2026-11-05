@@ -194,6 +194,7 @@ export default function App() {
                 onHost={() => setScreen({ name: 'lobby', role: 'host', room: null })}
                 onOnline={() => setScreen({ name: 'onlineHome' })}
                 onJoinInvite={() => invite && setScreen({ name: 'lobby', role: 'guest', room: invite })}
+                onJoinCode={(room) => setScreen({ name: 'lobby', role: 'guest', room })}
               />
             </div>
             <div className="mx-auto w-full max-w-md lg:mx-0">

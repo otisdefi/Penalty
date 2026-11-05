@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { peerOptions } from '../game/ice'
 import type { DataConnection, Peer } from 'peerjs'
 import type { Jersey, StadiumId } from '@/cosmetics/types'
 import { isStadium, parseJersey } from '@/cosmetics/validate'
@@ -74,7 +75,7 @@ export function useCosmeticSync({ matchId, seat, selfAddress, rivalAddress, jers
       try {
         const { Peer: PeerCtor } = await import('peerjs')
         if (cancelled) return
-        const p = new PeerCtor(peerId(matchId, seat, selfAddress), { debug: 0 })
+        const p = new PeerCtor(peerId(matchId, seat, selfAddress), peerOptions())
         peer = p
         p.on('connection', wire)
         p.on('error', () => undefined) // unreachable broker or taken id: play with default looks

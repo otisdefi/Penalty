@@ -5,6 +5,7 @@ import { JerseyDot } from '@/cosmetics/art'
 import { SaveResult } from './SaveResult'
 import { clearPending, loadPending, type Jersey } from '@/game/storage'
 import { sfx } from '@/game/audio'
+import { extractRoomId } from '@/game/peer'
 import { unlockAudio } from '@/lib/whistle'
 
 interface Props {
@@ -15,12 +16,16 @@ interface Props {
   onPractice: () => void
   onHost: () => void
   onJoinInvite: () => void
+  /** Join a friend's room from a typed code or pasted link. */
+  onJoinCode: (room: string) => void
   onOnline: () => void
 }
 
-export function Menu({ jersey, onCustomize, invited, onRanked, onPractice, onHost, onJoinInvite, onOnline }: Props) {
+export function Menu({ jersey, onCustomize, invited, onRanked, onPractice, onHost, onJoinInvite, onJoinCode, onOnline }: Props) {
   const { address } = useAccount()
   const [pending, setPending] = useState(loadPending)
+  const [code, setCode] = useState('')
+  const [codeError, setCodeError] = useState(false)
 
   const go = (fn: () => void) => () => {
     unlockAudio()
@@ -96,6 +101,43 @@ export function Menu({ jersey, onCustomize, invited, onRanked, onPractice, onHos
             <Users size={18} /> Play a friend
           </button>
         </div>
+        <form
+          className="flex items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            const room = extractRoomId(code)
+            if (!room) {
+              setCodeError(true)
+              return
+            }
+            go(() => onJoinCode(room))()
+          }}
+        >
+          <input
+            type="text"
+            value={code}
+            onChange={(e) => {
+              setCode(e.target.value)
+              setCodeError(false)
+            }}
+            placeholder="Friend's room code or link"
+            aria-label="Friend's room code or link"
+            aria-invalid={codeError}
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            className="mono h-11 min-w-0 flex-1 rounded-xl border bg-transparent px-3 text-sm"
+            style={{ borderColor: codeError ? 'var(--bad)' : 'var(--line)' }}
+          />
+          <button type="submit" className="btn btn-ghost" style={{ width: 'auto', minHeight: 44 }} disabled={code.trim() === ''}>
+            Join
+          </button>
+        </form>
+        {codeError && (
+          <p className="text-xs" style={{ color: 'var(--bad)' }} role="alert">
+            That doesn't look like a room code. It starts with "tb" and has 10 characters.
+          </p>
+        )}
         <p className="text-center text-xs text-pretty" style={{ color: 'var(--subtle)' }}>
           Ranked results can be saved onchain after the final whistle. Friend matches are for fun and are not saved.
         </p>
