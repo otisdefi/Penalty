@@ -24,6 +24,13 @@ Tiebreaker: a penalty shootout game (best of five, sudden death). Modes: ranked 
 - Commit hash is `keccak256(abi.encodePacked(id, kick, MAIN wallet, dir, salt))`. Gas estimates are padded by 50% because the RPC sometimes under-estimates.
 - `scripts/e2e-match.ts` runs the whole flow against an anvil fork of Arc Testnet.
 
+## Customization
+
+- `src/cosmetics/`: `catalog.ts` (items and unlock rules), `store.ts` (saved choices and ranked stats, localStorage with try/catch), `useUnlocks.ts` (merges browser stats with the wallet's onchain records from both contracts), `art.tsx` (jersey patterns, balls, trails, stadium themes), `nameFilter.ts` (name tag: 8 chars, no links, blocked words), `validate.ts` (parses shirts received from other players), `CustomizeScreen.tsx`.
+- Locked choices are swapped for free defaults by `applyUnlocks` wherever the game draws them.
+- Online matches share looks over a direct PeerJS link (`src/online/useCosmeticSync.ts`, ids derived from match id, seat and wallet). The contract only stores moves. Received data is validated, display only. The home player's stadium is shown to both.
+- The offline leaderboard is self-reported, so unlocks are cosmetic only.
+
 ## Layout
 
 - `src/game/`: pure logic (`logic.ts`), bot (`bot.ts`), audio, local storage, PeerJS wrapper (`peer.ts`)

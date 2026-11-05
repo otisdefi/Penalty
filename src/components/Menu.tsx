@@ -1,16 +1,15 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { Bot, Globe, Swords, Users } from 'lucide-react'
+import { Bot, Globe, Shirt, Swords, Users } from 'lucide-react'
+import { JerseyDot } from '@/cosmetics/art'
 import { SaveResult } from './SaveResult'
-import { clearPending, loadPending, saveJersey, type Jersey } from '@/game/storage'
+import { clearPending, loadPending, type Jersey } from '@/game/storage'
 import { sfx } from '@/game/audio'
 import { unlockAudio } from '@/lib/whistle'
 
-const COLORS = ['#e5383b', '#ffb703', '#2ec4b6', '#8338ec', '#f1f5f9', '#fb5607', '#06d6a0', '#ff4d9d']
-
 interface Props {
   jersey: Jersey
-  onJersey: (j: Jersey) => void
+  onCustomize: () => void
   invited: boolean
   onRanked: () => void
   onPractice: () => void
@@ -19,14 +18,10 @@ interface Props {
   onOnline: () => void
 }
 
-export function Menu({ jersey, onJersey, invited, onRanked, onPractice, onHost, onJoinInvite, onOnline }: Props) {
+export function Menu({ jersey, onCustomize, invited, onRanked, onPractice, onHost, onJoinInvite, onOnline }: Props) {
   const { address } = useAccount()
   const [pending, setPending] = useState(loadPending)
 
-  const update = (next: Jersey) => {
-    onJersey(next)
-    saveJersey(next)
-  }
   const go = (fn: () => void) => () => {
     unlockAudio()
     sfx.unlock()
@@ -60,52 +55,26 @@ export function Menu({ jersey, onJersey, invited, onRanked, onPractice, onHost, 
         </div>
       )}
 
-      <div className="panel space-y-4 p-5">
-        <div className="flex items-center gap-4">
-          <span
-            className="display flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl text-5xl font-extrabold"
-            style={{ background: jersey.color, color: '#fff', textShadow: '0 2px 4px rgba(0,0,0,0.55)', boxShadow: '0 0 0 1px rgba(255,255,255,0.25)' }}
-          >
-            {jersey.number}
+      <button
+        type="button"
+        onClick={go(onCustomize)}
+        className="panel flex w-full items-center gap-4 p-4 text-left transition active:scale-[0.99]"
+        aria-label="Customize your shirt, ball and stadium"
+      >
+        <svg viewBox="-16 -16 32 32" className="h-20 w-20 shrink-0" aria-hidden>
+          <JerseyDot jersey={jersey} number={jersey.number} r={14} fontSize={16} />
+        </svg>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--muted)' }}>
+            Your shirt
           </span>
-          <div className="min-w-0 flex-1 space-y-2">
-            <label htmlFor="shirt" className="text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--muted)' }}>
-              Shirt number
-            </label>
-            <input
-              id="shirt"
-              type="number"
-              min={0}
-              max={99}
-              inputMode="numeric"
-              value={jersey.number}
-              onChange={(e) => {
-                const n = Math.max(0, Math.min(99, Math.floor(Number(e.target.value) || 0)))
-                update({ ...jersey, number: n })
-              }}
-              className="display h-11 w-24 rounded-xl border bg-transparent px-3 text-2xl font-extrabold tabular-nums"
-              style={{ borderColor: 'var(--line)' }}
-            />
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Shirt colour">
-          {COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              role="radio"
-              aria-checked={jersey.color === c}
-              aria-label={`Colour ${c}`}
-              onClick={() => update({ ...jersey, color: c })}
-              className="h-11 w-11 rounded-full transition active:scale-95"
-              style={{
-                background: c,
-                boxShadow: jersey.color === c ? '0 0 0 2px var(--bg), 0 0 0 4px var(--lime)' : '0 0 0 1px rgba(255,255,255,0.2)',
-              }}
-            />
-          ))}
-        </div>
-      </div>
+          <span className="display block truncate text-3xl font-extrabold leading-none">{jersey.tag || `No. ${jersey.number}`}</span>
+          <span className="mt-1 block text-xs" style={{ color: 'var(--lime)' }}>
+            Customize shirt, ball and stadium
+          </span>
+        </span>
+        <Shirt size={22} style={{ color: 'var(--muted)' }} aria-hidden />
+      </button>
 
       <div className="space-y-2">
         {invited && (

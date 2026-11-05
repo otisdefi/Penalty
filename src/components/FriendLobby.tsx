@@ -2,27 +2,32 @@ import { useEffect, useRef, useState } from 'react'
 import { Check, Copy, Loader2 } from 'lucide-react'
 import { openHost, joinRoom, type FriendLink } from '@/game/peer'
 import type { Jersey } from '@/game/storage'
+import type { StadiumId } from '@/cosmetics/types'
 import { buildShareLink } from '@/lib/share'
 
 interface Props {
   role: 'host' | 'guest'
   room: string | null
   jersey: Jersey
-  onReady: (link: FriendLink, theirs: Jersey) => void
+  /** The host's stadium is shown to both players. */
+  stadium: StadiumId
+  onReady: (link: FriendLink, theirs: Jersey, hostStadium: StadiumId | undefined) => void
   onCancel: () => void
 }
 
-export function FriendLobby({ role, room, jersey, onReady, onCancel }: Props) {
+export function FriendLobby({ role, room, jersey, stadium, onReady, onCancel }: Props) {
   const [roomId, setRoomId] = useState<string | null>(room)
   const [link, setLink] = useState<string | null>(null)
   const [status, setStatus] = useState<'waiting' | 'connecting' | 'error'>(role === 'host' ? 'waiting' : 'connecting')
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const jerseyRef = useRef(jersey)
+  const stadiumRef = useRef(stadium)
   const readyRef = useRef(onReady)
 
   useEffect(() => {
     jerseyRef.current = jersey
+    stadiumRef.current = stadium
     readyRef.current = onReady
   })
 
@@ -33,7 +38,7 @@ export function FriendLobby({ role, room, jersey, onReady, onCancel }: Props) {
         onMessage: (m) => {
           if (m.t === 'hello' && alive) {
             alive = false
-            readyRef.current(l, m.jersey)
+            readyRef.current(l, m.jersey, m.stadium)
           }
         },
         onClose: () => {
@@ -42,7 +47,7 @@ export function FriendLobby({ role, room, jersey, onReady, onCancel }: Props) {
           setError('Your friend left before the match started.')
         },
       })
-      l.send({ t: 'hello', jersey: jerseyRef.current })
+      l.send({ t: 'hello', jersey: jerseyRef.current, stadium: role === 'host' ? stadiumRef.current : undefined })
     }
     const fail = (message: string) => {
       if (!alive) return

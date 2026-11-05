@@ -7,11 +7,14 @@ import Pitch from '@/components/Pitch'
 import { Scoreboard } from '@/components/Scoreboard'
 import { penaltyMatchAbi } from './abi'
 import { MATCH_ADDRESS, ONLINE_CHAIN_ID, STEP_TIMEOUT_S } from './config'
-import { ZERO_ADDRESS, kickFlags, sameAddress, slotsFor } from './helpers'
+import { STATUS, ZERO_ADDRESS, kickFlags, sameAddress, slotsFor } from './helpers'
 import { OnlineLobby } from './OnlineLobby'
 import { useOnlineMatch } from './useOnlineMatch'
 import { loadStored } from './storage'
-import { loadJersey, type Jersey } from '@/game/storage'
+import type { Jersey } from '@/game/storage'
+import { useEffectiveCosmetics } from '@/cosmetics/useUnlocks'
+import type { Look } from '@/cosmetics/types'
+import { useCosmeticSync } from './useCosmeticSync'
 import type { Status, Team } from '@/game/logic'
 import { setMuted as setAudioMuted, sfx } from '@/game/audio'
 import { isMuted, setMuted as setWhistleMuted } from '@/lib/whistle'
@@ -33,8 +36,22 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
   const { address } = useAccount()
   const publicClient = usePublicClient({ chainId: ONLINE_CHAIN_ID })
   const [muted, setMutedState] = useState(isMuted)
-  const [jersey] = useState(loadJersey)
+  const mine = useEffectiveCosmetics()
+  const jersey = mine.jersey
   const { m, stage } = o
+  const myJersey = jersey
+  const rivalAddr = m ? (o.mySeat === 2 ? m.p1 : m.p2) : undefined
+  const sync = useCosmeticSync({
+    matchId,
+    seat: o.mySeat,
+    selfAddress: address,
+    rivalAddress: rivalAddr && rivalAddr !== ZERO_ADDRESS ? rivalAddr : undefined,
+    jersey: myJersey,
+    stadium: mine.stadium,
+    enabled: !!m && m.status === STATUS.Active,
+  })
+  // Own ball and trail; the home player's stadium is shown to both players.
+  const look: Look = { ball: mine.ball, trail: mine.trail, stadium: o.mySeat === 2 ? (sync.homeStadium ?? mine.stadium) : mine.stadium }
 
   useEffect(() => () => sfx.stopAll(), [])
 
@@ -121,8 +138,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
     slots: slotsFor(m.kicks),
     winner: null,
   }
-  const myJersey = jersey
-  const kits: Record<Team, Jersey> = o.myTeam === 'red' ? { red: myJersey, blue: distinct(myJersey) } : { red: distinct(myJersey), blue: myJersey }
+  const kits: Record<Team, Jersey> = o.myTeam === 'red' ? { red: myJersey, blue: distinct(myJersey, sync.rival) } : { red: distinct(myJersey, sync.rival), blue: myJersey }
   const shooterTeam: Team = o.anim ? o.anim.shooter : o.shooterTeam
   const iShoot = shooterTeam === o.myTeam
   const labels = iShoot ? SHOOT_LABELS : KEEP_LABELS
@@ -152,7 +168,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
         className="relative mx-auto overflow-hidden rounded-3xl"
         style={{ border: '1px solid var(--line)', aspectRatio: '320 / 360', width: 'min(100%, calc(48dvh * 320 / 360))' }}
       >
-        <Pitch kick={o.anim} kits={kits} pick={o.pick} role={iShoot ? 'shoot' : 'dive'} shooterTeam={shooterTeam} myTeam={o.myTeam} rivalLabel={rivalLabel} />
+        <Pitch kick={o.anim} kits={kits} pick={o.pick} role={iShoot ? 'shoot' : 'dive'} shooterTeam={shooterTeam} myTeam={o.myTeam} rivalLabel={rivalLabel} look={look} />
         {o.anim && (
           <div
             key={m.kicks}
@@ -268,8 +284,10 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
   )
 }
 
-function distinct(mine: Jersey): Jersey {
-  return mine.color.toLowerCase() === RIVAL_JERSEY.color ? { color: '#ffd23f', number: RIVAL_JERSEY.number } : RIVAL_JERSEY
+/** The opponent's shirt (or a default until theirs arrives), kept visibly different from mine. */
+function distinct(mine: Jersey, theirs: Jersey | null): Jersey {
+  const base = theirs ?? RIVAL_JERSEY
+  return mine.color.toLowerCase() === base.color.toLowerCase() ? { ...base, color: base.color.toLowerCase() === '#ffd23f' ? '#3a86ff' : '#ffd23f' } : base
 }
 
 function Sweep({ o }: { o: ReturnType<typeof useOnlineMatch> }) {

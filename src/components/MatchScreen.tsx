@@ -11,6 +11,9 @@ import type { FriendLink } from '@/game/peer'
 import { textOn, YELLOW } from '@/lib/color'
 import { isMuted, setMuted as setWhistleMuted } from '@/lib/whistle'
 import { useAccount } from 'wagmi'
+import { useEffectiveCosmetics } from '@/cosmetics/useUnlocks'
+import { recordRankedResult } from '@/cosmetics/store'
+import type { Look, StadiumId } from '@/cosmetics/types'
 
 interface Props {
   mode: 'bot' | 'friend'
@@ -19,14 +22,18 @@ interface Props {
   kits: Record<Team, Jersey>
   link: FriendLink | null
   rivalName: string
+  /** Stadium chosen by the host in friend matches; otherwise the player's own. */
+  stadium?: StadiumId
   onExit: () => void
 }
 
 const SHOOT_LABELS = ['LEFT', 'CENTER', 'RIGHT'] as const
 const KEEP_LABELS = ['DIVE LEFT', 'STAY', 'DIVE RIGHT'] as const
 
-export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, onExit }: Props) {
+export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadium, onExit }: Props) {
   const m = useMatch({ mode, myTeam, link })
+  const mine = useEffectiveCosmetics()
+  const look: Look = { ball: mine.ball, trail: mine.trail, stadium: stadium ?? mine.stadium }
   const { address } = useAccount()
   const [muted, setMutedState] = useState(isMuted)
   const rivalTeam = otherTeam(myTeam)
@@ -41,6 +48,7 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, onExi
   useEffect(() => {
     if (done && ranked && mode === 'bot') {
       savePending({ matchId: m.matchId, won: m.won, address: address ?? '' })
+      recordRankedResult(m.won, m.matchId) // counts toward cosmetic unlocks
     }
   }, [done, ranked, mode, m.matchId, m.won, address])
 
@@ -99,7 +107,7 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, onExi
         className="relative mx-auto overflow-hidden rounded-3xl"
         style={{ border: '1px solid var(--line)', aspectRatio: '320 / 360', width: 'min(100%, calc(48dvh * 320 / 360))' }}
       >
-        <Pitch kick={m.anim} kits={kits} pick={m.myPick} role={m.role} shooterTeam={shooterTeam} myTeam={myTeam} rivalLabel={rivalName} />
+        <Pitch kick={m.anim} kits={kits} pick={m.myPick} role={m.role} shooterTeam={shooterTeam} myTeam={myTeam} rivalLabel={rivalName} look={look} />
         {m.anim && (
           <div
             key={m.kicks.length}

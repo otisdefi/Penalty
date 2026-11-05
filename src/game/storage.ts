@@ -1,7 +1,6 @@
-export interface Jersey {
-  color: string
-  number: number
-}
+import type { Jersey } from '../cosmetics/types'
+
+export type { Jersey }
 
 export interface Habits {
   shots: [number, number, number]
@@ -15,8 +14,6 @@ export interface PendingRanked {
   won: boolean
   address: string
 }
-
-export const DEFAULT_JERSEY: Jersey = { color: '#e5383b', number: 10 }
 
 export const emptyHabits = (): Habits => ({
   shots: [0, 0, 0],
@@ -47,16 +44,6 @@ function write(key: string, value: unknown) {
 }
 
 export const isHexColor = (v: unknown): v is string => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)
-
-export function loadJersey(): Jersey {
-  const j = read<Partial<Jersey>>('tb:jersey', {})
-  return {
-    color: isHexColor(j.color) ? j.color : DEFAULT_JERSEY.color,
-    number: Number.isInteger(j.number) && (j.number as number) >= 0 && (j.number as number) <= 99 ? (j.number as number) : DEFAULT_JERSEY.number,
-  }
-}
-export const saveJersey = (j: Jersey) => write('tb:jersey', j)
-
 
 export function loadHabits(): Habits {
   const h = read<Habits | null>('tb:habits', null)

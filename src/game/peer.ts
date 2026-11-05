@@ -1,9 +1,11 @@
 import type { DataConnection, Peer } from 'peerjs'
 import type { Dir } from './logic'
-import { isHexColor, type Jersey } from './storage'
+import { isStadium, parseJersey } from '../cosmetics/validate'
+import type { StadiumId } from '../cosmetics/types'
+import type { Jersey } from './storage'
 
 export type Msg =
-  | { t: 'hello'; jersey: Jersey }
+  | { t: 'hello'; jersey: Jersey; stadium?: StadiumId }
   | { t: 'commit'; r: number; h: string }
   | { t: 'reveal'; r: number; d: Dir; n: string }
   | { t: 'again' }
@@ -20,9 +22,9 @@ export function parseMsg(raw: unknown): Msg | null {
   const m = raw as Record<string, unknown>
   switch (m.t) {
     case 'hello': {
-      const j = m.jersey as Partial<Jersey> | undefined
-      if (!j || !isHexColor(j.color) || !Number.isInteger(j.number) || (j.number as number) < 0 || (j.number as number) > 99) return null
-      return { t: 'hello', jersey: { color: j.color, number: j.number as number } }
+      const jersey = parseJersey(m.jersey)
+      if (!jersey) return null
+      return { t: 'hello', jersey, stadium: isStadium(m.stadium) ? m.stadium : undefined }
     }
     case 'commit':
       return Number.isInteger(m.r) && typeof m.h === 'string' && /^[0-9a-f]{64}$/.test(m.h) ? { t: 'commit', r: m.r as number, h: m.h } : null

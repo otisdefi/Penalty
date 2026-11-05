@@ -120,6 +120,53 @@ input:focus-visible {
   }
 }
 
+/* Ball trail ghosts fade after the shot. */
+.trail-fade {
+  animation: trail-fade 760ms ease-out both;
+}
+
+@keyframes trail-fade {
+  0% {
+    opacity: 0.95;
+  }
+  65% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Stadium weather (rain and snow) loops gently and stops for reduced motion. */
+.rain-drop {
+  animation: rain-fall 0.8s linear infinite;
+}
+
+.snow-flake {
+  animation: snow-fall 5s linear infinite;
+}
+
+@keyframes rain-fall {
+  from {
+    transform: translate(0, -12px);
+  }
+  to {
+    transform: translate(-14px, 372px);
+  }
+}
+
+@keyframes snow-fall {
+  from {
+    transform: translate(0, -6px);
+  }
+  50% {
+    transform: translate(9px, 180px);
+  }
+  to {
+    transform: translate(-3px, 368px);
+  }
+}
+
 /* Net ripples when the ball hits it (the ball arrives about 430 ms after the kick). */
 .net-ripple {
   animation: net-ripple 650ms ease-out 420ms both;
@@ -141,6 +188,16 @@ input:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .rain-drop,
+  .snow-flake,
+  .trail-fade {
+    animation: none !important;
+  }
+
+  .trail-fade {
+    opacity: 0;
+  }
+
   .net-ripple {
     animation: none !important;
   }

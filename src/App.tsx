@@ -8,7 +8,11 @@ import { OnlineHome, type Invite } from '@/online/OnlineHome'
 import { OnlineMatchScreen } from '@/online/OnlineMatchScreen'
 import { isBytes32 } from '@/online/helpers'
 import { isRoomId, type FriendLink } from '@/game/peer'
-import { loadJersey, type Jersey } from '@/game/storage'
+import type { Jersey } from '@/game/storage'
+import { CustomizeScreen } from '@/cosmetics/CustomizeScreen'
+import { useEffectiveCosmetics } from '@/cosmetics/useUnlocks'
+import type { StadiumId } from '@/cosmetics/types'
+import { TestnetBadge } from '@/components/TestnetBadge'
 import { setMuted } from '@/game/audio'
 import { isMuted, unlockAudio } from '@/lib/whistle'
 import type { Team } from '@/game/logic'
@@ -16,6 +20,7 @@ import type { Team } from '@/game/logic'
 type Screen =
   | { name: 'menu' }
   | { name: 'onlineHome' }
+  | { name: 'customize' }
   | { name: 'online'; id: bigint }
   | { name: 'lobby'; role: 'host' | 'guest'; room: string | null }
   | {
@@ -27,6 +32,8 @@ type Screen =
       kits: Record<Team, Jersey>
       link: FriendLink | null
       rival: string
+      /** The host's stadium, shown to both players in friend matches. */
+      stadium?: StadiumId
     }
 
 const BOT_COLORS = ['#3a86ff', '#ffd23f', '#06d6a0', '#ff4d9d']
@@ -57,7 +64,9 @@ window.addEventListener('pointerdown', unlockAudio, { once: true, capture: true 
 export default function App() {
   const [onlineInvite, setOnlineInvite] = useState<Invite | null>(readOnlineInvite)
   const [screen, setScreen] = useState<Screen>(() => (readOnlineInvite() ? { name: 'onlineHome' } : { name: 'menu' }))
-  const [jersey, setJersey] = useState<Jersey>(loadJersey)
+  const cosmetics = useEffectiveCosmetics()
+  const jersey = cosmetics.jersey
+  const stadium = cosmetics.stadium
   const [invite, setInvite] = useState<string | null>(readInvite)
   const [counter, setCounter] = useState(0)
 
@@ -76,7 +85,7 @@ export default function App() {
     })
   }
 
-  const startFriend = (role: 'host' | 'guest', link: FriendLink, theirs: Jersey) => {
+  const startFriend = (role: 'host' | 'guest', link: FriendLink, theirs: Jersey, hostStadium?: StadiumId) => {
     const rival = distinct(jersey, theirs)
     const myTeam: Team = role === 'host' ? 'red' : 'blue'
     setCounter((c) => c + 1)
@@ -89,6 +98,7 @@ export default function App() {
       kits: myTeam === 'red' ? { red: jersey, blue: rival } : { red: rival, blue: jersey },
       link,
       rival: 'Friend',
+      stadium: role === 'guest' ? hostStadium : undefined,
     })
   }
 
@@ -108,6 +118,10 @@ export default function App() {
     setScreen({ name: 'menu' })
   }
 
+  if (screen.name === 'customize') {
+    return <CustomizeScreen onBack={() => setScreen({ name: 'menu' })} />
+  }
+
   if (screen.name === 'online') {
     return <OnlineMatchScreen key={screen.id.toString()} matchId={screen.id} onExit={() => setScreen({ name: 'onlineHome' })} />
   }
@@ -122,6 +136,7 @@ export default function App() {
         kits={screen.kits}
         link={screen.link}
         rivalName={screen.rival}
+        stadium={screen.stadium}
         onExit={toMenu}
       />
     )
@@ -130,7 +145,8 @@ export default function App() {
   return (
     <div className="relative min-h-dvh overflow-hidden" style={{ background: 'radial-gradient(120% 80% at 50% -10%, #12306b 0%, #060d1f 60%)' }}>
       <div className="relative z-10 mx-auto max-w-5xl px-4 pb-12 pt-4">
-        <header className="mb-6 flex items-center justify-end">
+        <header className="mb-6 flex items-center justify-between">
+          <TestnetBadge />
           <ConnectKitButton.Custom>
             {({ isConnected, show, truncatedAddress }) => (
               <button type="button" onClick={show} className="btn btn-ghost" style={{ width: 'auto', minHeight: 44 }}>
@@ -156,9 +172,10 @@ export default function App() {
             role={screen.role}
             room={screen.room}
             jersey={jersey}
-            onReady={(link, theirs) => {
+            stadium={stadium}
+            onReady={(link, theirs, hostStadium) => {
               if (screen.role === 'guest') clearInvite()
-              startFriend(screen.role, link, theirs)
+              startFriend(screen.role, link, theirs, hostStadium)
             }}
             onCancel={() => {
               if (screen.role === 'guest') clearInvite()
@@ -170,7 +187,7 @@ export default function App() {
             <div className="mx-auto w-full max-w-md lg:mx-0">
               <Menu
                 jersey={jersey}
-                onJersey={setJersey}
+                onCustomize={() => setScreen({ name: 'customize' })}
                 invited={invite !== null}
                 onRanked={() => startBot(true)}
                 onPractice={() => startBot(false)}

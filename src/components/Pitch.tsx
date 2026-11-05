@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import type { Dir, Kick, Team } from '../game/logic'
 import type { Jersey } from '../game/storage'
-import { textOn, YELLOW } from '../lib/color'
+import { YELLOW } from '../lib/color'
+import { BallArt, JerseyDot, STADIUM_PALETTE, StadiumBackground, StadiumOverlay, TrailPuff } from '../cosmetics/art'
+import { DEFAULT_LOOK, type Look } from '../cosmetics/types'
 
 interface Props {
   kick: Kick | null
@@ -14,6 +16,8 @@ interface Props {
   myTeam: Team
   /** Short label under the opponent's circle, such as "Bot" or a shortened wallet address. */
   rivalLabel?: string
+  /** Ball design, trail and stadium for the local view. */
+  look?: Look
 }
 
 /** Close-up of the penalty area: goal at the top, spot and shooter in the lower third. */
@@ -32,10 +36,7 @@ const DIVE_DX = 51
 function PlayerDot({ jersey, number, acting }: { jersey: Jersey; number: number | string; acting?: boolean }) {
   return (
     <g>
-      <circle r={R} fill={jersey.color} stroke="rgba(255,255,255,0.9)" strokeWidth="1.2" />
-      <text x="0" y="4" textAnchor="middle" fontSize="11.5" fontWeight="800" fill={textOn(jersey.color)} style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-        {number}
-      </text>
+      <JerseyDot jersey={jersey} number={number} r={R} />
       {acting && <circle r={R + 3.5} fill="none" stroke={YELLOW} strokeWidth="1.4" />}
     </g>
   )
@@ -77,7 +78,8 @@ function Glove() {
 
 const ease = 'cubic-bezier(0.15, 0.75, 0.35, 1)'
 
-export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, rivalLabel = 'Opponent' }: Props) {
+export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, rivalLabel = 'Opponent', look = DEFAULT_LOOK }: Props) {
+  const pal = STADIUM_PALETTE[look.stadium]
   const iShoot = shooterTeam === myTeam
   const [deflectedKick, setDeflectedKick] = useState<Kick | null>(null)
 
@@ -121,24 +123,21 @@ export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, riv
         </pattern>
         <radialGradient id="vignette" cx="50%" cy="55%" r="78%">
           <stop offset="62%" stopColor="rgba(0,0,0,0)" />
-          <stop offset="100%" stopColor="rgba(3,10,25,0.5)" />
+          <stop offset="100%" stopColor={`rgba(3,10,25,${pal.vignette})`} />
         </radialGradient>
       </defs>
 
-      {/* grass with mowing stripes */}
-      <rect width={PITCH_W} height={PITCH_H} fill="#1d7a3c" />
-      {[0, 2, 4, 6, 8].map((i) => (
-        <rect key={i} y={i * 40} width={PITCH_W} height="40" fill="#228a44" />
-      ))}
+      {/* grass, mowing stripes and crowd for the chosen stadium */}
+      <StadiumBackground stadium={look.stadium} w={PITCH_W} h={PITCH_H} />
 
       {/* penalty area markings only: end line, boxes, spot and arc */}
-      <g fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2.2">
+      <g fill="none" stroke={pal.line} strokeWidth="2.2">
         <path d="M0 48H320" />
         <path d="M16 48V292H304V48" />
         <path d="M58 48V98H262V48" />
         <path d="M97 292A70 70 0 0 0 223 292" />
       </g>
-      <circle cx={BALL.x} cy={BALL.y} r="3" fill="rgba(255,255,255,0.9)" />
+      <circle cx={BALL.x} cy={BALL.y} r="3" fill={pal.line} />
 
       {/* goal: the net ripples when a shot goes in */}
       <g className={scored ? 'net-ripple' : undefined} style={{ transformOrigin: `${GOAL.x + GOAL.w / 2}px ${GOAL.y}px` }}>
@@ -146,6 +145,8 @@ export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, riv
         <rect x={GOAL.x} y={GOAL.y} width={GOAL.w} height={GOAL.h} fill="rgba(255,255,255,0.07)" />
       </g>
       <path d={`M${GOAL.x} ${GOAL.y + GOAL.h}V${GOAL.y}H${GOAL.x + GOAL.w}V${GOAL.y + GOAL.h}`} fill="none" stroke="#fff" strokeWidth="5" strokeLinejoin="round" strokeLinecap="round" />
+
+      <StadiumOverlay stadium={look.stadium} w={PITCH_W} h={PITCH_H} />
 
       {/* aim / dive zones */}
       {ZONE_X.map((x, i) => {
@@ -175,7 +176,7 @@ export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, riv
       {/* goalkeeper: numbered circle on the goal line, slides to the chosen side */}
       <g style={{ transform: `translate(${kx}px, ${KEEPER.y}px)`, transition: kick ? `transform 330ms ${ease} ${kdelay}ms` : 'none' }}>
         <PlayerDot jersey={keeperKit} number={1} />
-        <Label mine={!iShoot} text={rivalLabel} />
+        <Label mine={!iShoot} text={keeperKit.tag || rivalLabel} />
         {saved && (
           <g transform="translate(16 -9)">
             <Glove />
@@ -191,16 +192,31 @@ export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, riv
         }}
       >
         <PlayerDot jersey={shooterKit} number={shooterKit.number} acting />
-        <Label mine={iShoot} text={rivalLabel} />
+        <Label mine={iShoot} text={shooterKit.tag || rivalLabel} />
       </g>
+
+      {/* ball trail: ghosts that follow the ball and fade out */}
+      {look.trail !== 'none' &&
+        [0, 1, 2, 3, 4].map((i) => (
+          <g
+            key={i}
+            className={kick ? 'trail-fade' : undefined}
+            style={{
+              opacity: kick ? undefined : 0,
+              transform: `translate(${ballTarget.x}px, ${ballTarget.y}px)`,
+              transition: kick ? `transform ${ballMs + (i + 1) * 70}ms ${ease}` : 'none',
+            }}
+          >
+            <TrailPuff trail={look.trail} i={i} />
+          </g>
+        ))}
 
       {/* ball */}
       <g style={{ transform: `translate(${ballTarget.x}px, ${ballTarget.y}px)`, transition: kick ? `transform ${ballMs}ms ${ease}` : 'none' }}>
         <g style={{ transform: `scale(${ballTarget.s})`, transition: kick ? `transform ${ballMs}ms ${ease}` : 'none' }}>
           <g transform="scale(1.2)">
             <ellipse cx="1" cy="3" rx="6" ry="3" fill="rgba(0,0,0,0.3)" />
-            <circle r="6.5" fill="#fff" stroke="#0a1530" strokeWidth="0.9" />
-            <polygon points="0,-3 2.9,-0.9 1.8,2.4 -1.8,2.4 -2.9,-0.9" fill="#0a1530" />
+            <BallArt design={look.ball} />
           </g>
         </g>
       </g>

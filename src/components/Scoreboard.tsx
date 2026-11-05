@@ -128,7 +128,7 @@ export function Scoreboard({ status, kicksTaken, kits, myTeam, rivalName, shoote
           key={t}
           team={t}
           kit={kits[t]}
-          name={names[t]}
+          name={kits[t].tag || names[t]}
           isMe={t === myTeam}
           acting={!done && t === shooterTeam}
           results={results[t]}
