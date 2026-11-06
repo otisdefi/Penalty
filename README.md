@@ -35,6 +35,10 @@ Other commands:
 - `bun run contracts:test` runs contract tests
 - `bun run abi:match` regenerates the online match ABI after changing the contract
 
+### Friend and online matches
+
+Both players choose their own shirt (colour, pattern, second colour, number) and a player name of up to 12 characters, then press Ready. In a friend room the match starts when both are ready. In an onchain match, creating, joining or queueing counts as Ready, because the move clock runs onchain. If both pick the same colour, the guest is shown in a contrasting one. The host's stadium is shown to both players; each player keeps their own ball.
+
 ### Languages
 
 English (default), Türkçe, Español, Português and Русский. The game uses the browser language on the first visit and remembers the choice made with the globe button. To add a language, copy `src/i18n/locales/es.ts` to a new file (for example `de.ts`), change the `code`, `name` and texts. It is picked up automatically, and any missing text falls back to English.

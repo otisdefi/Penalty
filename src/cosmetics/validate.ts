@@ -1,4 +1,4 @@
-import { BALLS, PATTERNS, STADIUMS, TRAILS } from './catalog'
+import { BALLS, PATTERNS, STADIUMS, TRAILS, isKnownColor } from './catalog'
 import { safeTag } from './nameFilter'
 import type { BallDesign, Jersey, PatternId, StadiumId, TrailId } from './types'
 
@@ -21,13 +21,14 @@ export const clampNumber = (v: unknown, fallback: number): number =>
 export function parseJersey(raw: unknown): Jersey | null {
   if (!raw || typeof raw !== 'object') return null
   const j = raw as Record<string, unknown>
-  if (!isHex(j.color)) return null
+  // Only colours the game offers are accepted from other players.
+  if (!isHex(j.color) || !isKnownColor(j.color)) return null
   if (typeof j.number !== 'number' || !Number.isInteger(j.number) || j.number < 1 || j.number > 99) return null
   return {
     color: j.color.toLowerCase(),
     number: j.number,
     pattern: isPattern(j.pattern) ? j.pattern : 'solid',
-    secondary: isHex(j.secondary) ? j.secondary.toLowerCase() : '#f1f5f9',
+    secondary: isHex(j.secondary) && isKnownColor(j.secondary) ? j.secondary.toLowerCase() : '#f1f5f9',
     tag: safeTag(j.tag),
   }
 }

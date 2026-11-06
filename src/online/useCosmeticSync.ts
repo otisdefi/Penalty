@@ -39,9 +39,13 @@ export function useCosmeticSync({ matchId, seat, selfAddress, rivalAddress, jers
   const [homeStadium, setHomeStadium] = useState<StadiumId | null>(null)
   const mine = useRef({ jersey, stadium })
 
+  const broadcast = useRef<() => void>(() => undefined)
+
   useEffect(() => {
     mine.current = { jersey, stadium }
-  })
+    // Tell the opponent right away when I change my shirt or name.
+    broadcast.current()
+  }, [jersey, stadium])
 
   useEffect(() => {
     if (!enabled || (seat !== 1 && seat !== 2) || !selfAddress || !rivalAddress) return
@@ -54,10 +58,15 @@ export function useCosmeticSync({ matchId, seat, selfAddress, rivalAddress, jers
 
     const payload = () => ({ t: 'look', jersey: mine.current.jersey, stadium: seat === 1 ? mine.current.stadium : undefined })
 
+    const open = new Set<DataConnection>()
+    broadcast.current = () => open.forEach((c) => c.open && void c.send(payload()))
+
     const wire = (conn: DataConnection) => {
       conn.on('open', () => {
+        open.add(conn)
         void conn.send(payload())
       })
+      conn.on('close', () => open.delete(conn))
       conn.on('data', (raw) => {
         if (!raw || typeof raw !== 'object') return
         const msg = raw as Record<string, unknown>
@@ -95,6 +104,7 @@ export function useCosmeticSync({ matchId, seat, selfAddress, rivalAddress, jers
 
     return () => {
       cancelled = true
+      broadcast.current = () => undefined
       if (timer) clearInterval(timer)
       peer?.destroy()
     }

@@ -12,6 +12,11 @@ import { useOnlineEntry } from './useOnlineEntry'
 import { requireChain } from '@/onchain-facts'
 import { unlockAudioTap } from './audioTap'
 import { useI18n } from '@/i18n'
+import { ChevronDown } from 'lucide-react'
+import { JerseyStep } from '@/cosmetics/JerseyStep'
+import { JerseyDot } from '@/cosmetics/art'
+import { displayName } from '@/cosmetics/identity'
+import { useCosmetics } from '@/cosmetics/store'
 
 export interface Invite {
   id: bigint
@@ -30,6 +35,9 @@ export function OnlineHome({ invite, onEnter, onBack }: Props) {
   const publicClient = usePublicClient({ chainId: ONLINE_CHAIN_ID })
   const { busy, error, create, join, quick, quoteFunding } = useOnlineEntry()
   const [useKey, setUseKey] = useState(true)
+  const mine = useCosmetics()
+  // Someone who was invited should pick their shirt before joining, so it starts open for them.
+  const [editJersey, setEditJersey] = useState(invite !== null)
   const decimals = requireChain(ONLINE_CHAIN_ID).nativeCurrency.decimals
 
   const funding = useQuery({
@@ -120,6 +128,34 @@ export function OnlineHome({ invite, onEnter, onBack }: Props) {
               </button>
             </div>
           )}
+
+          <div className="panel space-y-3 p-4">
+            <button
+              type="button"
+              onClick={() => setEditJersey((v) => !v)}
+              aria-expanded={editJersey}
+              className="flex w-full items-center gap-3 text-left"
+            >
+              <svg viewBox="-13 -13 26 26" className="h-11 w-11 shrink-0" aria-hidden>
+                <JerseyDot jersey={mine.jersey} number={mine.jersey.number} r={12} fontSize={11} />
+              </svg>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--muted)' }}>
+                  {t('ready.yourJersey')}
+                </span>
+                <span className="block truncate text-sm font-bold">{displayName(mine.jersey.tag, address)}</span>
+              </span>
+              <ChevronDown size={18} style={{ color: 'var(--muted)', transform: editJersey ? 'rotate(180deg)' : 'none' }} aria-hidden />
+            </button>
+            {editJersey && (
+              <>
+                <JerseyStep address={address} />
+                <p className="text-xs text-pretty" style={{ color: 'var(--muted)' }}>
+                  {t('online.readyHint', { s: n(STEP_TIMEOUT_S) })}
+                </p>
+              </>
+            )}
+          </div>
 
           {invite && (
             <div className="panel space-y-2 p-4">

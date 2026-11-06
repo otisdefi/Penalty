@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { LanguageButton } from '@/components/LanguageButton'
 import { useT } from '@/i18n'
+import { displayName } from '@/cosmetics/identity'
+import { resolveKits } from '@/cosmetics/kits'
 import { ConnectKitButton } from 'connectkit'
 import { Menu } from '@/components/Menu'
 import { MatchScreen } from '@/components/MatchScreen'
@@ -33,7 +35,10 @@ type Screen =
       myTeam: Team
       kits: Record<Team, Jersey>
       link: FriendLink | null
-      rival: 'bot' | 'friend'
+      /** Display name of each team's player. */
+      names: Record<Team, string>
+      /** The guest's shirt colour was switched because it matched the host's. */
+      recolored: boolean
       /** The host's stadium, shown to both players in friend matches. */
       stadium?: StadiumId
     }
@@ -69,12 +74,12 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>(() => (readOnlineInvite() ? { name: 'onlineHome' } : { name: 'menu' }))
   const cosmetics = useCosmetics()
   const jersey = cosmetics.jersey
-  const stadium = cosmetics.stadium
   const [invite, setInvite] = useState<string | null>(readInvite)
   const [counter, setCounter] = useState(0)
 
   const startBot = (ranked: boolean) => {
     const rival = distinct(jersey, { color: '#3a86ff', number: 7 })
+    const mine = { ...jersey, tag: displayName(jersey.tag) }
     setCounter((c) => c + 1)
     setScreen({
       name: 'match',
@@ -82,15 +87,19 @@ export default function App() {
       mode: 'bot',
       ranked,
       myTeam: 'red',
-      kits: { red: jersey, blue: rival },
+      kits: { red: mine, blue: rival },
       link: null,
-      rival: 'bot',
+      names: { red: mine.tag, blue: t('rival.bot') },
+      recolored: false,
     })
   }
 
   const startFriend = (role: 'host' | 'guest', link: FriendLink, theirs: Jersey, hostStadium?: StadiumId) => {
-    const rival = distinct(jersey, theirs)
+    const mine = { ...jersey, tag: displayName(jersey.tag) }
     const myTeam: Team = role === 'host' ? 'red' : 'blue'
+    // The host keeps their colour; if both picked the same one, the guest is shown in a contrasting colour.
+    const { host, guest, recolored } = role === 'host' ? resolveKits(mine, theirs) : resolveKits(theirs, mine)
+    const theirName = theirs.tag || t('rival.friend')
     setCounter((c) => c + 1)
     setScreen({
       name: 'match',
@@ -98,9 +107,10 @@ export default function App() {
       mode: 'friend',
       ranked: false,
       myTeam,
-      kits: myTeam === 'red' ? { red: jersey, blue: rival } : { red: rival, blue: jersey },
+      kits: { red: host, blue: guest },
       link,
-      rival: 'friend',
+      names: myTeam === 'red' ? { red: mine.tag, blue: theirName } : { red: theirName, blue: mine.tag },
+      recolored,
       stadium: role === 'guest' ? hostStadium : undefined,
     })
   }
@@ -138,7 +148,8 @@ export default function App() {
         myTeam={screen.myTeam}
         kits={screen.kits}
         link={screen.link}
-        rivalName={screen.rival}
+        names={screen.names}
+        recolored={screen.recolored}
         stadium={screen.stadium}
         onExit={toMenu}
       />
@@ -178,7 +189,6 @@ export default function App() {
             role={screen.role}
             room={screen.room}
             jersey={jersey}
-            stadium={stadium}
             onReady={(link, theirs, hostStadium) => {
               if (screen.role === 'guest') clearInvite()
               startFriend(screen.role, link, theirs, hostStadium)

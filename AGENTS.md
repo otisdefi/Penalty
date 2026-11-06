@@ -73,3 +73,9 @@ bun run dev
 - `src/i18n/locales/*.ts`: one file per language, picked up automatically (`import.meta.glob`). `en.ts` is the source of truth and defines every key; other files may omit keys (English fallback). Keep texts short for phone buttons. Do not translate wallet addresses, contract names or numbers.
 - Add a text: add the key to `en.ts`, then to the other language files. Use `t('key', { name: value })` with `{name}` placeholders.
 
+## Lobby and looks
+
+- Friend rooms: after connecting, both players share their look (`hello`) and press Ready (`ready`) in `FriendLobby`; the match starts when both are ready. Messages that arrive in the lobby are held and re-queued for the match (`FriendLink.requeue`).
+- Onchain matches share looks over a PeerJS side channel (`src/online/useCosmeticSync.ts`); Ready = create/join/queue, since the 20 second clock is onchain. Looks are validated (known colours and patterns, numbers 1 to 99, names 12 characters max with links and bad words removed) and only ever drawn, never rendered as HTML.
+- `src/cosmetics/kits.ts`: if both shirt colours match, the guest is shown in a contrasting colour. `src/cosmetics/identity.ts`: names default to "Player 1234" (offline and friend) or the short wallet address (onchain).
+

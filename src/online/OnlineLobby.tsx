@@ -4,6 +4,8 @@ import { QUEUE_TTL_S } from './config'
 import type { OnchainMatch } from './helpers'
 import { buildShareLink } from '@/lib/share'
 import { useI18n } from '@/i18n'
+import { useAccount } from 'wagmi'
+import { JerseyStep } from '@/cosmetics/JerseyStep'
 
 interface Props {
   matchId: bigint
@@ -18,6 +20,7 @@ interface Props {
 /** Waiting room: a ranked queue search, or a private room with a share link. */
 export function OnlineLobby({ matchId, m, roomCode, chainNow, busy, error, onCancel }: Props) {
   const { t, n } = useI18n()
+  const { address } = useAccount()
   const [link, setLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [copyError, setCopyError] = useState(false)
@@ -94,6 +97,12 @@ export function OnlineLobby({ matchId, m, roomCode, chainNow, busy, error, onCan
           {error}
         </p>
       )}
+      <div className="border-t pt-4" style={{ borderColor: 'var(--line)' }}>
+        <JerseyStep address={address} />
+        <p className="mt-2 text-left text-xs text-pretty" style={{ color: 'var(--muted)' }}>
+          {t('online.lobbyShare')}
+        </p>
+      </div>
       <button type="button" className="btn btn-ghost" disabled={cancelling} onClick={onCancel}>
         {cancelling ? <Loader2 size={16} className="animate-spin" /> : null}
         {m.ranked ? t('lobby.stop') : t('lobby.cancelRoom')}

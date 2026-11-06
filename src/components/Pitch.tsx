@@ -16,7 +16,8 @@ interface Props {
   /** The local player's team, used to place the YOU tag. */
   myTeam: Team
   /** Short label under the opponent's circle, such as "Bot" or a shortened wallet address. */
-  rivalLabel?: string
+  /** Display names under the players. A team without a name shows a plain label. */
+  names?: Record<Team, string>
   /** Ball design, trail and stadium for the local view. */
   look?: Look
 }
@@ -44,21 +45,28 @@ function PlayerDot({ jersey, number, acting }: { jersey: Jersey; number: number 
 }
 
 function Label({ mine, text, you }: { mine: boolean; text: string; you: string }) {
-  const w = Math.max(22, 8 + you.length * 5.6)
-  return (
-    <g transform={`translate(0 ${R + 5})`} pointerEvents="none">
-      {mine ? (
-        <>
-          <rect x={-w / 2} y="0" width={w} height="10" rx="2.5" fill={YELLOW} />
-          <text x="0" y="7.6" textAnchor="middle" fontSize="7.5" fontWeight="800" fill="#0a1530" letterSpacing="0.6">
-            {you}
-          </text>
-        </>
-      ) : (
-        <text x="0" y="8" textAnchor="middle" fontSize="7.5" fontWeight="700" fill="rgba(255,255,255,0.85)" letterSpacing="0.4">
+  const nameW = text.length * 4.3
+  if (!mine) {
+    return (
+      <g transform={`translate(0 ${R + 5})`} pointerEvents="none">
+        <text x="0" y="8" textAnchor="middle" fontSize="7.5" fontWeight="700" fill="rgba(255,255,255,0.9)" letterSpacing="0.3">
           {text}
         </text>
-      )}
+      </g>
+    )
+  }
+  // Your own player: a small YOU tag, then your name.
+  const pillW = Math.max(20, 8 + you.length * 5.6)
+  const x0 = -(pillW + 3 + nameW) / 2
+  return (
+    <g transform={`translate(0 ${R + 5})`} pointerEvents="none">
+      <rect x={x0} y="0" width={pillW} height="10" rx="2.5" fill={YELLOW} />
+      <text x={x0 + pillW / 2} y="7.6" textAnchor="middle" fontSize="7.5" fontWeight="800" fill="#0a1530" letterSpacing="0.6">
+        {you}
+      </text>
+      <text x={x0 + pillW + 3} y="8" textAnchor="start" fontSize="7.5" fontWeight="700" fill="rgba(255,255,255,0.95)" letterSpacing="0.3">
+        {text}
+      </text>
     </g>
   )
 }
@@ -80,9 +88,8 @@ function Glove() {
 
 const ease = 'cubic-bezier(0.15, 0.75, 0.35, 1)'
 
-export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, rivalLabel, look = DEFAULT_LOOK }: Props) {
+export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, names, look = DEFAULT_LOOK }: Props) {
   const { t } = useI18n()
-  const rival = rivalLabel ?? t('rival.opponent')
   const pal = STADIUM_PALETTE[look.stadium]
   const iShoot = shooterTeam === myTeam
   const [deflectedKick, setDeflectedKick] = useState<Kick | null>(null)
@@ -180,7 +187,7 @@ export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, riv
       {/* goalkeeper: numbered circle on the goal line, slides to the chosen side */}
       <g style={{ transform: `translate(${kx}px, ${KEEPER.y}px)`, transition: kick ? `transform 330ms ${ease} ${kdelay}ms` : 'none' }}>
         <PlayerDot jersey={keeperKit} number={1} />
-        <Label mine={!iShoot} text={keeperKit.tag || rival} you={t('you')} />
+        <Label mine={!iShoot} text={names?.[keeperTeam] ?? (keeperKit.tag || t('rival.opponent'))} you={t('you')} />
         {saved && (
           <g transform="translate(16 -9)">
             <Glove />
@@ -196,7 +203,7 @@ export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, riv
         }}
       >
         <PlayerDot jersey={shooterKit} number={shooterKit.number} acting />
-        <Label mine={iShoot} text={shooterKit.tag || rival} you={t('you')} />
+        <Label mine={iShoot} text={names?.[shooterTeam] ?? (shooterKit.tag || t('rival.opponent'))} you={t('you')} />
       </g>
 
       {/* ball trail: ghosts that follow the ball and fade out */}

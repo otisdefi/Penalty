@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ArrowLeft, Minus, Plus, Zap } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowLeft, Zap } from 'lucide-react'
 import Pitch from '@/components/Pitch'
 import { TestnetBadge } from '@/components/TestnetBadge'
 import { LanguageButton } from '@/components/LanguageButton'
-import { useI18n, type MessageKey } from '@/i18n'
+import { useI18n } from '@/i18n'
 import type { Kick } from '@/game/logic'
-import { BallArt, JerseyDot, STADIUM_PALETTE } from './art'
-import { BALLS, COLORS, PATTERNS, STADIUMS, TRAILS } from './catalog'
-import { TAG_MAX, tagMessage, tagProblem, trimTag } from './nameFilter'
+import { BallArt, STADIUM_PALETTE } from './art'
+import { JerseyEditor } from './JerseyEditor'
+import { displayName } from './identity'
+import { Choice, SectionTitle } from './ui'
+import { BALLS, STADIUMS, TRAILS } from './catalog'
 import { setCosmetics, useCosmetics } from './store'
 import { DEFAULT_LOOK, type Jersey, type Look, type StadiumId } from './types'
 
@@ -21,73 +23,11 @@ const TABS = [
 
 const RIVAL: Jersey = { color: '#3a86ff', number: 7, pattern: 'solid', secondary: '#f1f5f9', tag: '' }
 
-function SectionTitle({ children }: { children: ReactNode }) {
-  return (
-    <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--muted)' }}>
-      {children}
-    </p>
-  )
-}
-
-/** One selectable item. */
-function Choice({
-  selected,
-  label,
-  onClick,
-  className = '',
-  children,
-}: {
-  selected: boolean
-  label: string
-  onClick: () => void
-  className?: string
-  children: ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      aria-label={label}
-      onClick={onClick}
-      className={`relative flex flex-col items-center justify-center gap-1 rounded-2xl p-2 text-center transition active:scale-95 ${className}`}
-      style={{
-        background: selected ? 'rgba(198,255,61,0.12)' : 'rgba(255,255,255,0.05)',
-        boxShadow: selected ? '0 0 0 2px var(--lime)' : 'inset 0 0 0 1px rgba(255,255,255,0.1)',
-        cursor: 'pointer',
-        minHeight: 44,
-      }}
-    >
-      {children}
-      <span className="text-[11px] font-semibold leading-tight">{label}</span>
-    </button>
-  )
-}
-
-function Swatch({ color, label, selected, onClick }: { color: string; label: string; selected: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      className="relative flex h-11 w-11 items-center justify-center rounded-full transition active:scale-95"
-      style={{
-        background: color,
-        cursor: 'pointer',
-        boxShadow: selected ? '0 0 0 2px var(--bg), 0 0 0 4px var(--lime)' : '0 0 0 1px rgba(255,255,255,0.25)',
-      }}
-    />
-  )
-}
-
 export function CustomizeScreen({ onBack }: { onBack: () => void }) {
-  const { t: tr, n } = useI18n()
+  const { t: tr } = useI18n()
   const raw = useCosmetics()
   const [tab, setTab] = useState<Tab>('jersey')
   const [kick, setKick] = useState<Kick | null>(null)
-  const [tagDraft, setTagDraft] = useState(raw.jersey.tag ?? '')
-  const [tagError, setTagError] = useState<MessageKey | null>(null)
   const timer = useRef<number | null>(null)
 
   useEffect(
@@ -99,22 +39,11 @@ export function CustomizeScreen({ onBack }: { onBack: () => void }) {
 
   const c = raw
   const look: Look = { ...DEFAULT_LOOK, ball: c.ball, trail: c.trail, stadium: c.stadium }
-  const jersey = raw.jersey
-
-  const setJersey = (patch: Partial<Jersey>) => setCosmetics((cur) => ({ ...cur, jersey: { ...cur.jersey, ...patch } }))
 
   const testKick = () => {
     if (timer.current) window.clearTimeout(timer.current)
     setKick({ shooter: 'red', shot: Math.random() < 0.5 ? 0 : 2, dive: 1, goal: true })
     timer.current = window.setTimeout(() => setKick(null), 1800)
-  }
-
-  const onTag = (value: string) => {
-    const cleaned = trimTag(value)
-    setTagDraft(cleaned)
-    const problem = tagProblem(value)
-    setTagError(tagMessage(problem))
-    setJersey({ tag: problem ? '' : cleaned.trim() })
   }
 
   return (
@@ -131,7 +60,7 @@ export function CustomizeScreen({ onBack }: { onBack: () => void }) {
       </header>
 
       <div className="relative mx-auto overflow-hidden rounded-3xl" style={{ border: '1px solid var(--line)', aspectRatio: '320 / 360', width: 'min(100%, calc(34dvh * 320 / 360))' }}>
-        <Pitch kick={kick} kits={{ red: c.jersey, blue: RIVAL }} pick={null} role="shoot" shooterTeam="red" myTeam="red" look={look} />
+        <Pitch kick={kick} kits={{ red: c.jersey, blue: RIVAL }} pick={null} role="shoot" shooterTeam="red" myTeam="red" names={{ red: displayName(c.jersey.tag), blue: tr('rival.opponent') }} look={look} />
       </div>
 
       <button type="button" className="btn btn-ghost" style={{ minHeight: 44 }} onClick={testKick}>
@@ -155,95 +84,8 @@ export function CustomizeScreen({ onBack }: { onBack: () => void }) {
       </div>
 
       {tab === 'jersey' && (
-        <section className="panel space-y-5 p-4">
-          <div>
-            <SectionTitle>{tr('cz.mainColor')}</SectionTitle>
-            <div className="flex flex-wrap gap-2">
-              {COLORS.map((x) => (
-                <Swatch key={x.id} color={x.id} label={tr(x.labelKey)} selected={jersey.color === x.id} onClick={() => setJersey({ color: x.id })} />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <SectionTitle>{tr('cz.pattern')}</SectionTitle>
-            <div className="grid grid-cols-3 gap-2">
-              {PATTERNS.map((p) => (
-                <Choice key={p.id} selected={(jersey.pattern ?? 'solid') === p.id} label={tr(p.labelKey)} onClick={() => setJersey({ pattern: p.id })}>
-                  <svg viewBox="-13 -13 26 26" className="h-9 w-9" aria-hidden>
-                    <JerseyDot jersey={{ ...jersey, pattern: p.id }} number={jersey.number} r={12} fontSize={11} />
-                  </svg>
-                </Choice>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <SectionTitle>{tr('cz.secondColor')}</SectionTitle>
-            <div className="flex flex-wrap gap-2">
-              {COLORS.map((x) => (
-                <Swatch key={x.id} color={x.id} label={tr(x.labelKey)} selected={jersey.secondary === x.id} onClick={() => setJersey({ secondary: x.id })} />
-              ))}
-            </div>
-            {(jersey.pattern ?? 'solid') === 'solid' && (
-              <p className="mt-2 text-[11px]" style={{ color: 'var(--subtle)' }}>
-                {tr('cz.secondHint')}
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <SectionTitle>{tr('cz.number')}</SectionTitle>
-              <div className="flex items-center gap-1">
-                <button type="button" aria-label={tr('cz.numberDown')} className="btn btn-ghost" style={{ width: 44, minHeight: 44, padding: 0 }} onClick={() => setJersey({ number: Math.max(1, jersey.number - 1) })}>
-                  <Minus size={16} />
-                </button>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={99}
-                  aria-label={tr('cz.numberAria')}
-                  value={jersey.number}
-                  onChange={(e) => {
-                    const n = Math.floor(Number(e.target.value))
-                    if (Number.isFinite(n)) setJersey({ number: Math.min(99, Math.max(1, n)) })
-                  }}
-                  className="display h-11 w-14 rounded-xl border bg-transparent text-center text-2xl font-extrabold tabular-nums"
-                  style={{ borderColor: 'var(--line)' }}
-                />
-                <button type="button" aria-label={tr('cz.numberUp')} className="btn btn-ghost" style={{ width: 44, minHeight: 44, padding: 0 }} onClick={() => setJersey({ number: Math.min(99, jersey.number + 1) })}>
-                  <Plus size={16} />
-                </button>
-              </div>
-            </div>
-            <div>
-              <SectionTitle>{tr('cz.tag', { max: n(TAG_MAX) })}</SectionTitle>
-              <input
-                type="text"
-                maxLength={TAG_MAX}
-                value={tagDraft}
-                onChange={(e) => onTag(e.target.value)}
-                placeholder={tr('cz.optional')}
-                autoComplete="off"
-                autoCapitalize="characters"
-                spellCheck={false}
-                aria-label={tr('cz.tagAria')}
-                aria-invalid={tagError !== null}
-                className="display h-11 w-full rounded-xl border bg-transparent px-3 text-xl font-extrabold uppercase"
-                style={{ borderColor: tagError ? 'var(--bad)' : 'var(--line)' }}
-              />
-            </div>
-          </div>
-          {tagError && (
-            <p className="text-xs" style={{ color: 'var(--bad)' }} role="alert">
-              {tr(tagError)}
-            </p>
-          )}
-          <p className="text-[11px] text-pretty" style={{ color: 'var(--subtle)' }}>
-            {tr('cz.tagRules')}
-          </p>
+        <section className="panel p-4">
+          <JerseyEditor />
         </section>
       )}
 

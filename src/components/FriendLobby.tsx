@@ -1,17 +1,22 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, Check, Copy, Loader2, RefreshCw, Share2, WifiOff } from 'lucide-react'
-import { friendError, joinRoom, openHost, MAX_RECONNECTS, type FriendError, type FriendLink, type FriendNotice, type HostStatus } from '@/game/peer'
+import { friendError, joinRoom, openHost, MAX_RECONNECTS, type FriendError, type FriendLink, type FriendNotice, type HostStatus, type Msg } from '@/game/peer'
 import { useI18n, type MessageKey } from '@/i18n'
 import type { Jersey } from '@/game/storage'
 import type { StadiumId } from '@/cosmetics/types'
 import { buildShareLink } from '@/lib/share'
+import Pitch from '@/components/Pitch'
+import { JerseyDot } from '@/cosmetics/art'
+import { JerseyEditor } from '@/cosmetics/JerseyEditor'
+import { displayName } from '@/cosmetics/identity'
+import { colorLabelKey, resolveKits } from '@/cosmetics/kits'
+import { useCosmetics } from '@/cosmetics/store'
+import { DEFAULT_LOOK } from '@/cosmetics/types'
 
 interface Props {
   role: 'host' | 'guest'
   room: string | null
   jersey: Jersey
-  /** The host's stadium is shown to both players. */
-  stadium: StadiumId
   onReady: (link: FriendLink, theirs: Jersey, hostStadium: StadiumId | undefined) => void
   onCancel: () => void
 }
@@ -66,7 +71,7 @@ function useWakeLock(active: boolean): void {
   }, [active])
 }
 
-export function FriendLobby({ role, room, jersey, stadium, onReady, onCancel }: Props) {
+export function FriendLobby({ role, room, jersey, onReady, onCancel }: Props) {
   const { t, n } = useI18n()
   const [runKey, setRunKey] = useState(0)
   const [roomId, setRoomId] = useState<string | null>(room)
@@ -78,24 +83,70 @@ export function FriendLobby({ role, room, jersey, stadium, onReady, onCancel }: 
   const [notice, setNotice] = useState<FriendNotice | null>(null)
   const [copied, setCopied] = useState<'link' | 'code' | null>(null)
   const [shareNote, setShareNote] = useState<MessageKey | null>(null)
-  const jerseyRef = useRef(jersey)
-  const stadiumRef = useRef(stadium)
+  const mine = useCosmetics()
+  // What the other player sees of you: your shirt plus your name (or "Player 1234" when you have none).
+  const sendJersey = useMemo(() => ({ ...jersey, tag: displayName(jersey.tag) }), [jersey])
   const readyRef = useRef(onReady)
+  const connRef = useRef<FriendLink | null>(null)
+  const theirsRef = useRef<Jersey | null>(null)
+  const theirStadiumRef = useRef<StadiumId | undefined>(undefined)
+  const theirReadyRef = useRef(false)
+  const myReadyRef = useRef(false)
+  const startedRef = useRef(false)
+  const pendingRef = useRef<Msg[]>([])
+  const [conn, setConn] = useState<FriendLink | null>(null)
+  const [theirs, setTheirs] = useState<Jersey | null>(null)
+  const [theirStadium, setTheirStadium] = useState<StadiumId | undefined>(undefined)
+  const [theirReady, setTheirReady] = useState(false)
+  const [myReady, setMyReady] = useState(false)
 
   useEffect(() => {
-    jerseyRef.current = jersey
-    stadiumRef.current = stadium
     readyRef.current = onReady
   })
+
+  // The match starts only when both players are ready and I have seen the other player's shirt.
+  const tryStart = () => {
+    const l = connRef.current
+    const other = theirsRef.current
+    if (!l || !other || startedRef.current || !myReadyRef.current || !theirReadyRef.current) return
+    startedRef.current = true
+    l.setHandlers({}) // hold anything that arrives from now on until the match screen takes over
+    l.requeue(pendingRef.current)
+    readyRef.current(l, other, theirStadiumRef.current)
+  }
+
+  // Share my look when I join and again every time I change it in the lobby.
+  useEffect(() => {
+    conn?.send({ t: 'hello', jersey: sendJersey, stadium: role === 'host' ? mine.stadium : undefined })
+  }, [conn, sendJersey, mine.stadium, role])
+
+  const toggleReady = () => {
+    const next = !myReadyRef.current
+    myReadyRef.current = next
+    setMyReady(next)
+    conn?.send({ t: 'ready', ready: next })
+    if (next) tryStart()
+  }
 
   useEffect(() => {
     let alive = true
     const handshake = (l: FriendLink) => {
+      connRef.current = l
+      setConn(l)
       l.setHandlers({
         onMessage: (m) => {
-          if (m.t === 'hello' && alive) {
-            alive = false
-            readyRef.current(l, m.jersey, m.stadium)
+          if (!alive) return
+          if (m.t === 'hello') {
+            theirsRef.current = m.jersey
+            theirStadiumRef.current = m.stadium
+            setTheirs(m.jersey)
+            setTheirStadium(m.stadium)
+          } else if (m.t === 'ready') {
+            theirReadyRef.current = m.ready
+            setTheirReady(m.ready)
+            tryStart()
+          } else {
+            pendingRef.current.push(m)
           }
         },
         onClose: () => {
@@ -104,7 +155,6 @@ export function FriendLobby({ role, room, jersey, stadium, onReady, onCancel }: 
           setError(friendError('friend', role))
         },
       })
-      l.send({ t: 'hello', jersey: jerseyRef.current, stadium: role === 'host' ? stadiumRef.current : undefined })
     }
     const fail = (e: FriendError) => {
       if (alive) setError(e)
@@ -164,6 +214,18 @@ export function FriendLobby({ role, room, jersey, stadium, onReady, onCancel }: 
     setLink(null)
     setExpiresAt(null)
     setHostStatus({ state: 'waiting', attempt: 0, max: MAX_RECONNECTS })
+    connRef.current = null
+    theirsRef.current = null
+    theirStadiumRef.current = undefined
+    theirReadyRef.current = false
+    myReadyRef.current = false
+    startedRef.current = false
+    pendingRef.current = []
+    setConn(null)
+    setTheirs(null)
+    setTheirStadium(undefined)
+    setTheirReady(false)
+    setMyReady(false)
     if (role === 'host') setRoomId(null)
     setRunKey((k) => k + 1)
   }
@@ -210,6 +272,92 @@ export function FriendLobby({ role, room, jersey, stadium, onReady, onCancel }: 
         )}
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
           {t('common.backToMenu')}
+        </button>
+      </div>
+    )
+  }
+
+  if (conn) {
+    // Both players are connected: pick your look, then press Ready.
+    const hostIsMe = role === 'host'
+    const fallback = { color: '#3a86ff', number: 7, pattern: 'solid' as const, secondary: '#f1f5f9', tag: '' }
+    const other = theirs ?? fallback
+    const { host, guest, recolored } = hostIsMe ? resolveKits(sendJersey, other) : resolveKits(other, sendJersey)
+    const kits = { red: host, blue: guest }
+    const myTeam = hostIsMe ? 'red' : 'blue'
+    const theirTeam = hostIsMe ? 'blue' : 'red'
+    const theirName = theirs?.tag || t('rival.friend')
+    const myName = sendJersey.tag
+    const names = { red: hostIsMe ? myName : theirName, blue: hostIsMe ? theirName : myName } as const
+    const guestColorKey = colorLabelKey(guest.color)
+    const guestColorName = guestColorKey ? t(guestColorKey) : ''
+    const look = { ...DEFAULT_LOOK, ball: mine.ball, trail: mine.trail, stadium: hostIsMe ? mine.stadium : (theirStadium ?? mine.stadium) }
+    const theirKit = kits[theirTeam]
+
+    return (
+      <div className="panel mx-auto max-w-md space-y-4 p-5 text-center">
+        <div className="space-y-1">
+          <h2 className="display text-3xl font-extrabold text-balance">{t('ready.title')}</h2>
+          <p className="text-xs text-pretty" style={{ color: 'var(--muted)' }}>
+            {t('ready.rule')}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 rounded-2xl p-3 text-left" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <svg viewBox="-13 -13 26 26" className="h-11 w-11 shrink-0" aria-hidden>
+            <JerseyDot jersey={theirKit} number={theirKit.number} r={12} fontSize={11} />
+          </svg>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-bold">{theirName}</span>
+            <span className="block text-xs" style={{ color: theirReady ? 'var(--good)' : 'var(--muted)' }} role="status">
+              {theirReady ? t('ready.theyReady') : theirs ? t('ready.choosing') : t('ready.joining')}
+            </span>
+          </span>
+        </div>
+
+        <div
+          className="relative mx-auto overflow-hidden rounded-3xl"
+          style={{ border: '1px solid var(--line)', aspectRatio: '320 / 360', width: 'min(100%, calc(32dvh * 320 / 360))' }}
+        >
+          <Pitch kick={null} kits={kits} pick={null} role="shoot" shooterTeam="red" myTeam={myTeam} names={names} look={look} />
+        </div>
+
+        <ul className="space-y-1 text-xs text-pretty" style={{ color: 'var(--muted)' }}>
+          <li>{t('ready.stadiumHost')}</li>
+          <li>{t('ready.ballOwn')}</li>
+          {recolored && (
+            <li style={{ color: 'var(--yellow)' }} role="status">
+              {t('ready.sameColor', { color: guestColorName })}
+            </li>
+          )}
+        </ul>
+
+        <div className="space-y-2 text-left">
+          <h3 className="display text-xl font-extrabold">{t('ready.yourJersey')}</h3>
+          <JerseyEditor disabled={myReady} />
+          {myReady && (
+            <p className="text-xs" style={{ color: 'var(--muted)' }}>
+              {t('ready.locked')}
+            </p>
+          )}
+        </div>
+
+        {myReady ? (
+          <div className="space-y-2">
+            <p className="flex items-center justify-center gap-2 text-sm font-semibold" style={{ color: 'var(--good)' }} role="status">
+              <Loader2 size={15} className="animate-spin" /> {theirReady ? t('ready.starting') : t('ready.waitingFor', { name: theirName })}
+            </p>
+            <button type="button" className="btn btn-ghost" onClick={toggleReady}>
+              {t('ready.change')}
+            </button>
+          </div>
+        ) : (
+          <button type="button" className="btn btn-primary" onClick={toggleReady} style={{ minHeight: 52 }}>
+            <Check size={18} /> {t('ready.ready')}
+          </button>
+        )}
+        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+          {t('common.cancel')}
         </button>
       </div>
     )

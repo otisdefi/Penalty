@@ -14,6 +14,7 @@ import { textOn, YELLOW } from '@/lib/color'
 import { isMuted, setMuted as setWhistleMuted } from '@/lib/whistle'
 import { useAccount } from 'wagmi'
 import { useCosmetics } from '@/cosmetics/store'
+import { colorLabelKey } from '@/cosmetics/kits'
 import type { Look, StadiumId } from '@/cosmetics/types'
 
 interface Props {
@@ -22,7 +23,10 @@ interface Props {
   myTeam: Team
   kits: Record<Team, Jersey>
   link: FriendLink | null
-  rivalName: 'bot' | 'friend'
+  /** Display name of each team's player. */
+  names: Record<Team, string>
+  /** The guest's shirt colour was switched because it matched the host's. */
+  recolored?: boolean
   /** Stadium chosen by the host in friend matches; otherwise the player's own. */
   stadium?: StadiumId
   onExit: () => void
@@ -31,10 +35,9 @@ interface Props {
 const SHOOT_LABELS = ['match.shoot.left', 'match.shoot.center', 'match.shoot.right'] as const
 const KEEP_LABELS = ['match.keep.left', 'match.keep.stay', 'match.keep.right'] as const
 
-export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadium, onExit }: Props) {
+export function MatchScreen({ mode, ranked, myTeam, kits, link, names, recolored = false, stadium, onExit }: Props) {
   const { t, n } = useI18n()
   const m = useMatch({ mode, myTeam, link })
-  const rivalText = rivalName === 'bot' ? t('rival.bot') : t('rival.friend')
   const mine = useCosmetics()
   const look: Look = { ball: mine.ball, trail: mine.trail, stadium: stadium ?? mine.stadium }
   const { address } = useAccount()
@@ -101,7 +104,7 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
         kicksTaken={m.kicks.length}
         kits={kits}
         myTeam={myTeam}
-        rivalName={rivalText}
+        names={names}
         shooterTeam={shooterTeam}
         done={done}
         choosing={choosing}
@@ -112,7 +115,7 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
         className="relative mx-auto overflow-hidden rounded-3xl"
         style={{ border: '1px solid var(--line)', aspectRatio: '320 / 360', width: 'min(100%, calc(48dvh * 320 / 360))' }}
       >
-        <Pitch kick={m.anim} kits={kits} pick={m.myPick} role={m.role} shooterTeam={shooterTeam} myTeam={myTeam} rivalLabel={rivalText} look={look} />
+        <Pitch kick={m.anim} kits={kits} pick={m.myPick} role={m.role} shooterTeam={shooterTeam} myTeam={myTeam} names={names} look={look} />
         {m.anim && (
           <div
             key={m.kicks.length}
@@ -126,6 +129,12 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
           </div>
         )}
       </div>
+
+      {recolored && !done && (
+        <p className="text-center text-[11px]" style={{ color: 'var(--yellow)' }} role="status">
+          {t('ready.sameColor', { color: colorLabelKey(kits.blue.color) ? t(colorLabelKey(kits.blue.color)!) : '' })}
+        </p>
+      )}
 
       {!done && m.phase !== 'aborted' && (
         <div className="space-y-1.5">
@@ -187,6 +196,9 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
         <div className="panel space-y-3 p-4">
           <p className="display text-center text-4xl font-extrabold" style={{ color: m.won ? 'var(--good)' : 'var(--bad)' }}>
             {m.won ? t('match.youWin') : t('match.youLose')} {n(m.status[myTeam])}-{n(m.status[rivalTeam])}
+          </p>
+          <p className="truncate text-center text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+            {names[myTeam]} {n(m.status[myTeam])} - {n(m.status[rivalTeam])} {names[rivalTeam]}
           </p>
           {ranked && mode === 'bot' && <SaveResult won={m.won} onSaved={clearPending} />}
           <button

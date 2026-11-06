@@ -6,7 +6,10 @@ import { peerOptions } from './ice'
 import type { Jersey } from './storage'
 
 export type Msg =
+  /** A player's look (shirt and name, plus the stadium from the host). Sent on joining and on every change in the lobby. */
   | { t: 'hello'; jersey: Jersey; stadium?: StadiumId }
+  /** Lobby: this player is (or is no longer) ready to start. */
+  | { t: 'ready'; ready: boolean }
   | { t: 'commit'; r: number; h: string }
   | { t: 'reveal'; r: number; d: Dir; n: string }
   | { t: 'again' }
@@ -17,6 +20,8 @@ export interface FriendLink {
   role: 'host' | 'guest'
   send: (m: Msg) => void
   setHandlers: (h: { onMessage?: (m: Msg) => void; onClose?: () => void }) => void
+  /** Put messages back at the front of the queue, so the next screen receives them. */
+  requeue: (messages: Msg[]) => void
   close: () => void
 }
 
@@ -35,6 +40,8 @@ export function parseMsg(raw: unknown): Msg | null {
       return Number.isInteger(m.r) && (m.d === 0 || m.d === 1 || m.d === 2) && typeof m.n === 'string' && /^[0-9a-f]{32}$/.test(m.n)
         ? { t: 'reveal', r: m.r as number, d: m.d, n: m.n }
         : null
+    case 'ready':
+      return typeof m.ready === 'boolean' ? { t: 'ready', ready: m.ready } : null
     case 'again':
       return { t: 'again' }
     case 'ping':
@@ -90,7 +97,7 @@ const errType = (err: unknown): string => (err as { type?: string } | null)?.typ
 const PING_MS = 10_000
 const DEAD_MS = 45_000
 
-function wrap(peer: Peer, conn: DataConnection, role: FriendLink['role']): FriendLink {
+export function wrap(peer: Peer, conn: DataConnection, role: FriendLink['role']): FriendLink {
   let onMessage: ((m: Msg) => void) | undefined
   let onClose: (() => void) | undefined
   let closed = false
@@ -147,6 +154,9 @@ function wrap(peer: Peer, conn: DataConnection, role: FriendLink['role']): Frien
       onClose = h.onClose
       if (onMessage) while (queue.length) onMessage(queue.shift() as Msg)
       if (onClose && closeQueued) onClose()
+    },
+    requeue: (messages) => {
+      queue.unshift(...messages)
     },
     close: () => {
       closed = true

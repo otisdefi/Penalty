@@ -22,6 +22,8 @@ import { shortAddress } from '@/lib/errors'
 import { textOn, YELLOW } from '@/lib/color'
 import { buildTxExplorerUrl, requireChain } from '@/onchain-facts'
 import { LanguageButton } from '@/components/LanguageButton'
+import { displayName } from '@/cosmetics/identity'
+import { colorLabelKey, resolveKits } from '@/cosmetics/kits'
 import { useI18n, type TFunction } from '@/i18n'
 
 interface Props {
@@ -31,7 +33,7 @@ interface Props {
 
 const SHOOT_LABELS = ['match.shoot.left', 'match.shoot.center', 'match.shoot.right'] as const
 const KEEP_LABELS = ['match.keep.left', 'match.keep.stay', 'match.keep.right'] as const
-const RIVAL_JERSEY: Jersey = { color: '#3a86ff', number: 7 }
+const RIVAL_JERSEY: Jersey = { color: '#3a86ff', number: 7, pattern: 'solid', secondary: '#f1f5f9', tag: '' }
 
 export function OnlineMatchScreen({ matchId, onExit }: Props) {
   const { t, n } = useI18n()
@@ -141,15 +143,20 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
     slots: slotsFor(m.kicks),
     winner: null,
   }
-  const kits: Record<Team, Jersey> = o.myTeam === 'red' ? { red: myJersey, blue: distinct(myJersey, sync.rival) } : { red: distinct(myJersey, sync.rival), blue: myJersey }
+  // The home player (red) keeps their colour; if both picked the same, the away player is shown in a contrasting one.
+  const rivalJersey = sync.rival ?? RIVAL_JERSEY
+  const resolved = o.mySeat === 2 ? resolveKits(rivalJersey, myJersey) : resolveKits(myJersey, rivalJersey)
+  const kits: Record<Team, Jersey> = { red: resolved.host, blue: resolved.guest }
+  const myName = displayName(myJersey.tag, address)
+  const rivalName = sync.rival?.tag || (o.mySeat !== 0 && rivalAddr && rivalAddr !== ZERO_ADDRESS ? shortAddress(rivalAddr) : t('rival.opponent'))
+  const names: Record<Team, string> = o.myTeam === 'red' ? { red: myName, blue: rivalName } : { red: rivalName, blue: myName }
+  const guestColorKey = colorLabelKey(resolved.guest.color)
   const shooterTeam: Team = o.anim ? o.anim.shooter : o.shooterTeam
   const iShoot = shooterTeam === o.myTeam
   const labels = iShoot ? SHOOT_LABELS : KEEP_LABELS
   const canPick = stage === 'choose' && !o.anim && !o.busy
   const timerOn = stage === 'choose' || stage === 'committed' || stage === 'reveal' || stage === 'revealed'
   const myKit = kits[o.myTeam]
-  const rivalAddress = o.mySeat === 2 ? m.p1 : m.p2
-  const rivalLabel = o.mySeat !== 0 && rivalAddress !== ZERO_ADDRESS ? shortAddress(rivalAddress) : t('rival.opponent')
   const showResult = finished && !o.anim
 
   return (
@@ -159,7 +166,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
         kicksTaken={m.kicks}
         kits={kits}
         myTeam={o.myTeam}
-        rivalName={t('rival.opponent')}
+        names={names}
         shooterTeam={shooterTeam}
         done={finished}
         choosing={timerOn}
@@ -171,7 +178,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
         className="relative mx-auto overflow-hidden rounded-3xl"
         style={{ border: '1px solid var(--line)', aspectRatio: '320 / 360', width: 'min(100%, calc(48dvh * 320 / 360))' }}
       >
-        <Pitch kick={o.anim} kits={kits} pick={o.pick} role={iShoot ? 'shoot' : 'dive'} shooterTeam={shooterTeam} myTeam={o.myTeam} rivalLabel={rivalLabel} look={look} />
+        <Pitch kick={o.anim} kits={kits} pick={o.pick} role={iShoot ? 'shoot' : 'dive'} shooterTeam={shooterTeam} myTeam={o.myTeam} names={names} look={look} />
         {o.anim && (
           <div
             key={m.kicks}
@@ -185,6 +192,12 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
           </div>
         )}
       </div>
+
+      {resolved.recolored && !finished && (
+        <p className="text-center text-[11px]" style={{ color: 'var(--yellow)' }} role="status">
+          {t('ready.sameColor', { color: guestColorKey ? t(guestColorKey) : '' })}
+        </p>
+      )}
 
       {!showResult && !finished && (
         <div className="space-y-1.5">
@@ -258,6 +271,9 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
           <p className="display text-4xl font-extrabold" style={{ color: draw ? 'var(--muted)' : isWinner ? 'var(--good)' : 'var(--bad)' }}>
             {draw ? t('online.noWinner') : isWinner ? t('match.youWin') : o.mySeat === 0 ? t('online.matchOver') : t('match.youLose')} {o.mySeat === 2 ? `${n(m.score2)}-${n(m.score1)}` : `${n(m.score1)}-${n(m.score2)}`}
           </p>
+          <p className="truncate text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+            {o.mySeat === 2 ? `${names.blue} ${n(m.score2)} - ${n(m.score1)} ${names.red}` : `${names.red} ${n(m.score1)} - ${n(m.score2)} ${names.blue}`}
+          </p>
           <p className="text-sm text-pretty" style={{ color: 'var(--muted)' }}>
             {forfeit.data?.forfeit
               ? isWinner
@@ -285,12 +301,6 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
       )}
     </Shell>
   )
-}
-
-/** The opponent's shirt (or a default until theirs arrives), kept visibly different from mine. */
-function distinct(mine: Jersey, theirs: Jersey | null): Jersey {
-  const base = theirs ?? RIVAL_JERSEY
-  return mine.color.toLowerCase() === base.color.toLowerCase() ? { ...base, color: base.color.toLowerCase() === '#ffd23f' ? '#3a86ff' : '#ffd23f' } : base
 }
 
 function Sweep({ o }: { o: ReturnType<typeof useOnlineMatch> }) {

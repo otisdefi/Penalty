@@ -9,7 +9,8 @@ interface Props {
   kicksTaken: number
   kits: Record<Team, Jersey>
   myTeam: Team
-  rivalName: string
+  /** Display name of each team's player. */
+  names: Record<Team, string>
   shooterTeam: Team
   done: boolean
   choosing: boolean
@@ -68,18 +69,20 @@ function Row({ team, kit, name, isMe, acting, results, slots, score, nextIndex, 
       >
         {formatNumber(kit.number)}
       </span>
-      <div className="w-[76px] shrink-0 space-y-0.5">
+      <div className="w-[88px] shrink-0 space-y-0.5">
+        <p className="truncate text-[12px] font-bold leading-tight" title={name}>
+          {name}
+        </p>
         <div className="flex items-center gap-1">
-          <span className="truncate text-[11px] font-bold uppercase tracking-[0.06em]">{name}</span>
           {isMe && (
             <span className="rounded px-1 py-px text-[9px] font-extrabold tracking-[0.06em]" style={{ background: YELLOW, color: '#0a1530' }}>
               {t('you')}
             </span>
           )}
+          <span className="truncate text-[9px] font-bold uppercase tracking-[0.1em]" style={{ color: acting ? YELLOW : 'var(--subtle)' }}>
+            {acting ? t('sb.shooting') : t('sb.keeper')}
+          </span>
         </div>
-        <p className="text-[9px] font-bold uppercase tracking-[0.1em]" style={{ color: acting ? YELLOW : 'var(--subtle)' }}>
-          {acting ? t('sb.shooting') : t('sb.keeper')}
-        </p>
       </div>
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
         {Array.from({ length: slots }, (_, i) => (
@@ -91,15 +94,11 @@ function Row({ team, kit, name, isMe, acting, results, slots, score, nextIndex, 
   )
 }
 
-export function Scoreboard({ status, kicksTaken, kits, myTeam, rivalName, shooterTeam, done, choosing, secondsLeft, totalSeconds = CHOICE_SECONDS }: Props) {
+export function Scoreboard({ status, kicksTaken, kits, myTeam, names, shooterTeam, done, choosing, secondsLeft, totalSeconds = CHOICE_SECONDS }: Props) {
   const { t, n } = useI18n()
   const suddenDeath = kicksTaken >= REGULATION * 2
   const round = Math.floor(kicksTaken / 2) + 1
   const title = done ? t('sb.fullTime') : suddenDeath ? t('sb.suddenDeath', { round: n(round) }) : t('sb.round', { round: n(round), total: n(REGULATION) })
-  const names: Record<Team, string> = {
-    red: myTeam === 'red' ? t('sb.player') : rivalName,
-    blue: myTeam === 'blue' ? t('sb.player') : rivalName,
-  }
   const results: Record<Team, boolean[]> = { red: status.redKicks, blue: status.blueKicks }
 
   return (
@@ -131,7 +130,7 @@ export function Scoreboard({ status, kicksTaken, kits, myTeam, rivalName, shoote
           key={tm}
           team={tm}
           kit={kits[tm]}
-          name={kits[tm].tag || names[tm]}
+          name={names[tm]}
           isMe={tm === myTeam}
           acting={!done && tm === shooterTeam}
           results={results[tm]}
