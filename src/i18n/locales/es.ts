@@ -2,6 +2,7 @@ import type { Locale } from '../types'
 
 const es: Locale = {
   code: 'es',
+  order: 2,
   name: 'Español',
   messages: {
     you: 'TÚ',
@@ -266,7 +267,7 @@ const es: Locale = {
     'online.expiredLate': 'No cumpliste el plazo de {s} segundos, así que tu rival gana por incomparecencia. Cierra el partido para continuar.',
     'online.expiredNone': 'Ninguno de los dos jugó a tiempo. Cierra este partido para liberar tu billetera.',
     'online.claimWin': 'Reclamar victoria',
-    'online.settle': 'Cerrar partido',
+    'online.settle': 'Finalizar partido',
     'online.close': 'Cerrar partido',
     'online.watching': 'Estás mirando. Solo los dos jugadores pueden jugar.',
     'online.noWinner': 'Sin ganador',

@@ -66,3 +66,10 @@ Tiebreaker: a penalty shootout game (best of five, sudden death). Modes: ranked 
 bun install
 bun run dev
 ```
+
+## Languages (i18n)
+
+- `src/i18n/index.ts`: tiny translation layer (`useI18n()` gives `t`, `n` for number formatting, and the current language). The choice is saved under `tb:lang`; the first visit uses the browser language if supported.
+- `src/i18n/locales/*.ts`: one file per language, picked up automatically (`import.meta.glob`). `en.ts` is the source of truth and defines every key; other files may omit keys (English fallback). Keep texts short for phone buttons. Do not translate wallet addresses, contract names or numbers.
+- Add a text: add the key to `en.ts`, then to the other language files. Use `t('key', { name: value })` with `{name}` placeholders.
+

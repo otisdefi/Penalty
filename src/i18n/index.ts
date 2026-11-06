@@ -14,7 +14,7 @@ const modules = import.meta.glob<{ default: Locale }>('./locales/*.ts', { eager:
 
 export const LANGUAGES: readonly Locale[] = Object.values(modules)
   .map((m) => m.default)
-  .sort((a, b) => (a.code === 'en' ? -1 : b.code === 'en' ? 1 : a.code.localeCompare(b.code)))
+  .sort((a, b) => (a.code === 'en' ? -1 : b.code === 'en' ? 1 : (a.order ?? 100) - (b.order ?? 100) || a.code.localeCompare(b.code)))
 
 const byCode = new Map(LANGUAGES.map((l) => [l.code, l]))
 const STORAGE_KEY = 'tb:lang'

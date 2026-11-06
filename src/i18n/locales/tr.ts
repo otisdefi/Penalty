@@ -2,6 +2,7 @@ import type { Locale } from '../types'
 
 const tr: Locale = {
   code: 'tr',
+  order: 1,
   name: 'Türkçe',
   messages: {
     you: 'SEN',

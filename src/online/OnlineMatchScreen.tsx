@@ -22,7 +22,7 @@ import { shortAddress } from '@/lib/errors'
 import { textOn, YELLOW } from '@/lib/color'
 import { buildTxExplorerUrl, requireChain } from '@/onchain-facts'
 import { LanguageButton } from '@/components/LanguageButton'
-import { useI18n, type MessageKey, type TFunction } from '@/i18n'
+import { useI18n, type TFunction } from '@/i18n'
 
 interface Props {
   matchId: bigint
@@ -179,7 +179,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
             style={{ background: 'rgba(6,13,31,0.8)', borderBlock: `2px solid ${o.anim.goal ? YELLOW : '#ffffff'}` }}
             role="status"
           >
-            <span className="display text-6xl font-extrabold leading-none tracking-wider" style={{ color: o.anim.goal ? YELLOW : '#ffffff' }}>
+            <span className="display block truncate px-2 font-extrabold leading-none tracking-wider" style={{ color: o.anim.goal ? YELLOW : '#ffffff', fontSize: (o.anim.goal ? t('banner.goal') : t('banner.saved')).length > 6 ? 44 : 60 }}>
               {o.anim.goal ? t('banner.goal') : t('banner.saved')}
             </span>
           </div>
@@ -210,7 +210,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
                     boxShadow: picked ? '0 0 0 3px rgba(255,210,63,0.35)' : 'inset 0 0 0 1px rgba(255,255,255,0.25)',
                   }}
                 >
-                  <span className="display text-lg font-extrabold leading-tight tracking-wider">{t(labels[d])}</span>
+                  <span className="display text-[17px] font-extrabold leading-tight tracking-wide">{t(labels[d])}</span>
                 </button>
               )
             })}

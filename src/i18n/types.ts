@@ -11,5 +11,7 @@ export interface Locale {
   code: string
   /** The language's own name, shown in the list. */
   name: string
+  /** Optional position in the language list (English is always first). Languages without one go last, A to Z. */
+  order?: number
   messages: Partial<Record<MessageKey, string>>
 }

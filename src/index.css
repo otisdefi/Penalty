@@ -27,6 +27,12 @@ body {
   color: var(--ink);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
+  /* Longer words (Russian, Portuguese) wrap or hyphenate instead of overflowing small screens. */
+  overflow-wrap: break-word;
+}
+
+html {
+  hyphens: auto;
 }
 
 .display {
@@ -58,6 +64,12 @@ body {
   padding: 0 22px;
   font-weight: 700;
   font-size: 15px;
+  line-height: 1.15;
+  padding-block: 8px;
+  text-align: center;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  hyphens: auto;
   transition: transform 0.12s, filter 0.12s, background 0.12s;
   cursor: pointer;
 }

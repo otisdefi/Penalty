@@ -35,6 +35,10 @@ Other commands:
 - `bun run contracts:test` runs contract tests
 - `bun run abi:match` regenerates the online match ABI after changing the contract
 
+### Languages
+
+English (default), Türkçe, Español, Português and Русский. The game uses the browser language on the first visit and remembers the choice made with the globe button. To add a language, copy `src/i18n/locales/es.ts` to a new file (for example `de.ts`), change the `code`, `name` and texts. It is picked up automatically, and any missing text falls back to English.
+
 ### Environment variables
 
 - `VITE_LEADERBOARD_ADDRESS`: address of the deployed leaderboard contract on Arc Testnet (offline ranked results).

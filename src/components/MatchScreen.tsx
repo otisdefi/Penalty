@@ -120,7 +120,7 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
             style={{ background: 'rgba(6,13,31,0.8)', borderBlock: `2px solid ${m.anim.goal ? YELLOW : '#ffffff'}` }}
             role="status"
           >
-            <span className="display text-6xl font-extrabold leading-none tracking-wider" style={{ color: m.anim.goal ? YELLOW : '#ffffff' }}>
+            <span className="display block truncate px-2 font-extrabold leading-none tracking-wider" style={{ color: m.anim.goal ? YELLOW : '#ffffff', fontSize: (m.anim.goal ? t('banner.goal') : t('banner.saved')).length > 6 ? 44 : 60 }}>
               {m.anim.goal ? t('banner.goal') : t('banner.saved')}
             </span>
           </div>
@@ -161,7 +161,7 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
                     boxShadow: picked ? `0 0 0 3px rgba(255,210,63,0.35)` : 'inset 0 0 0 1px rgba(255,255,255,0.25)',
                   }}
                 >
-                  <span className="display text-lg font-extrabold leading-tight tracking-wider">{t(labels[d])}</span>
+                  <span className="display text-[17px] font-extrabold leading-tight tracking-wide">{t(labels[d])}</span>
                 </button>
               )
             })}
