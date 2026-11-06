@@ -29,8 +29,6 @@ const messages = {
   // home menu
   'menu.kicker': 'Penalty shootout',
   'menu.tagline': 'Best of five. Outguess the keeper, then save your result to the Arc Testnet table.',
-  'menu.pendingWin': 'You have a ranked win that was not saved yet.',
-  'menu.pendingLoss': 'You have a ranked loss that was not saved yet.',
   'menu.yourShirt': 'Your shirt',
   'menu.number': 'No. {n}',
   'menu.customize': 'Customize shirt, ball and stadium',
@@ -317,6 +315,9 @@ const messages = {
   'ready.ready': 'Ready',
   'online.readyHint': 'Creating, joining or queueing is your Ready. The {s} second move clock starts once both players are in, so set your jersey first.',
   'online.lobbyShare': "Your shirt and name are shared with your opponent when they join, and again when you change them. The stadium is the host's; your ball stays yours.",
+  'save.skip': "Skip",
+  'save.skipped': "Skipped. This result will not be saved.",
+  'save.note': "Ranked results are only saved onchain if you save them now.",
 } as const
 
 export default { code: 'en', name: 'English', messages }

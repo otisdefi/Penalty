@@ -11,7 +11,7 @@ import { useT } from '@/i18n'
 
 interface Props {
   won: boolean
-  onSaved: () => void
+  onSaved?: () => void
 }
 
 export function SaveResult({ won, onSaved }: Props) {
@@ -26,7 +26,7 @@ export function SaveResult({ won, onSaved }: Props) {
   useEffect(() => {
     if (!isSuccess) return
     void queryClient.invalidateQueries()
-    onSaved()
+    onSaved?.()
   }, [isSuccess, queryClient, onSaved])
 
   const save = async () => {

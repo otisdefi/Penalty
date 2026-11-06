@@ -7,12 +7,11 @@ import { Scoreboard } from './Scoreboard'
 import { SaveResult } from './SaveResult'
 import { useMatch } from '@/hooks/useMatch'
 import { otherTeam, shooterOf, type Dir, type Team } from '@/game/logic'
-import { clearPending, savePending, type Jersey } from '@/game/storage'
+import type { Jersey } from '@/game/storage'
 import { setMuted as setAudioMuted, sfx } from '@/game/audio'
 import type { FriendLink } from '@/game/peer'
 import { textOn, YELLOW } from '@/lib/color'
 import { isMuted, setMuted as setWhistleMuted } from '@/lib/whistle'
-import { useAccount } from 'wagmi'
 import { useCosmetics } from '@/cosmetics/store'
 import { colorLabelKey } from '@/cosmetics/kits'
 import type { Look, StadiumId } from '@/cosmetics/types'
@@ -40,8 +39,9 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, names, recolored
   const m = useMatch({ mode, myTeam, link })
   const mine = useCosmetics()
   const look: Look = { ball: mine.ball, trail: mine.trail, stadium: stadium ?? mine.stadium }
-  const { address } = useAccount()
   const [muted, setMutedState] = useState(isMuted)
+  // A ranked result can only be saved from this screen. Skipping (or leaving) discards it for good.
+  const [skippedId, setSkippedId] = useState<string | null>(null)
   const rivalTeam = otherTeam(myTeam)
   const shooterTeam: Team = m.anim ? m.anim.shooter : shooterOf(m.round)
   const choosing = m.phase === 'choosing'
@@ -49,13 +49,6 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, names, recolored
   const iShoot = m.role === 'shoot'
   const labels = iShoot ? SHOOT_LABELS : KEEP_LABELS
   const myKit = kits[myTeam]
-
-  // Keep a ranked result retrievable if the tab closes before it is saved.
-  useEffect(() => {
-    if (done && ranked && mode === 'bot') {
-      savePending({ matchId: m.matchId, won: m.won, address: address ?? '' })
-    }
-  }, [done, ranked, mode, m.matchId, m.won, address])
 
   // Silence any crowd or commentary still playing when the match screen closes.
   useEffect(() => () => sfx.stopAll(), [])
@@ -200,7 +193,25 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, names, recolored
           <p className="truncate text-center text-sm font-semibold" style={{ color: 'var(--muted)' }}>
             {names[myTeam]} {n(m.status[myTeam])} - {n(m.status[rivalTeam])} {names[rivalTeam]}
           </p>
-          {ranked && mode === 'bot' && <SaveResult won={m.won} onSaved={clearPending} />}
+          {ranked && mode === 'bot' && (
+            <div className="space-y-2 rounded-2xl p-3" style={{ background: 'rgba(255,255,255,0.05)' }}>
+              {skippedId === m.matchId ? (
+                <p className="text-center text-sm font-semibold" style={{ color: 'var(--muted)' }} role="status">
+                  {t('save.skipped')}
+                </p>
+              ) : (
+                <>
+                  <SaveResult won={m.won} />
+                  <button type="button" className="btn btn-ghost" style={{ minHeight: 44 }} onClick={() => setSkippedId(m.matchId)}>
+                    {t('save.skip')}
+                  </button>
+                </>
+              )}
+              <p className="text-center text-[11px] text-pretty" style={{ color: 'var(--subtle)' }}>
+                {t('save.note')}
+              </p>
+            </div>
+          )}
           <button
             type="button"
             className={`btn ${ranked && mode === 'bot' ? 'btn-ghost' : 'btn-primary'}`}

@@ -27,8 +27,6 @@ const pt: Locale = {
 
     'menu.kicker': 'Disputa de pênaltis',
     'menu.tagline': 'Melhor de cinco. Engane o goleiro e salve seu resultado na tabela da Arc Testnet.',
-    'menu.pendingWin': 'Você tem uma vitória ranqueada que ainda não foi salva.',
-    'menu.pendingLoss': 'Você tem uma derrota ranqueada que ainda não foi salva.',
     'menu.yourShirt': 'Sua camisa',
     'menu.number': 'Nº {n}',
     'menu.customize': 'Personalize camisa, bola e estádio',
@@ -307,6 +305,9 @@ const pt: Locale = {
     'ready.ready': 'Pronto',
     'online.readyHint': 'Criar, entrar ou ir para a fila é o seu "Pronto". O relógio de {s} segundos começa quando os dois jogadores estão dentro, então escolha antes a sua camisa.',
     'online.lobbyShare': 'Sua camisa e seu nome são enviados ao adversário quando ele entra e a cada mudança. O estádio é o do anfitrião; a bola continua sendo a sua.',
+    'save.skip': "Pular",
+    'save.skipped': "Pulado. Este resultado não será salvo.",
+    'save.note': "Resultados ranqueados só são salvos onchain se você salvar agora.",
   },
 }
 

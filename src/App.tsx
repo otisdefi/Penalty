@@ -12,7 +12,7 @@ import { OnlineHome, type Invite } from '@/online/OnlineHome'
 import { OnlineMatchScreen } from '@/online/OnlineMatchScreen'
 import { isBytes32 } from '@/online/helpers'
 import { isRoomId, type FriendLink } from '@/game/peer'
-import type { Jersey } from '@/game/storage'
+import { clearPending, type Jersey } from '@/game/storage'
 import { CustomizeScreen } from '@/cosmetics/CustomizeScreen'
 import { useCosmetics } from '@/cosmetics/store'
 import type { StadiumId } from '@/cosmetics/types'
@@ -65,6 +65,8 @@ function readOnlineInvite(): Invite | null {
 }
 
 setMuted(isMuted())
+// Older versions kept an unsaved ranked result; it is never shown again.
+clearPending()
 // The first tap anywhere unlocks audio for browsers that block it until a gesture.
 window.addEventListener('pointerdown', unlockAudio, { once: true, capture: true })
 

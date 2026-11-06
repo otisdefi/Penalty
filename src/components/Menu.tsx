@@ -1,9 +1,7 @@
 import { useState } from 'react'
-import { useAccount } from 'wagmi'
 import { Bot, Globe, Shirt, Swords, Users } from 'lucide-react'
 import { JerseyDot } from '@/cosmetics/art'
-import { SaveResult } from './SaveResult'
-import { clearPending, loadPending, type Jersey } from '@/game/storage'
+import type { Jersey } from '@/game/storage'
 import { sfx } from '@/game/audio'
 import { extractRoomId } from '@/game/peer'
 import { useI18n } from '@/i18n'
@@ -24,8 +22,6 @@ interface Props {
 
 export function Menu({ jersey, onCustomize, invited, onRanked, onPractice, onHost, onJoinInvite, onJoinCode, onOnline }: Props) {
   const { t, n } = useI18n()
-  const { address } = useAccount()
-  const [pending, setPending] = useState(loadPending)
   const [code, setCode] = useState('')
   const [codeError, setCodeError] = useState(false)
 
@@ -34,8 +30,6 @@ export function Menu({ jersey, onCustomize, invited, onRanked, onPractice, onHos
     sfx.unlock()
     fn()
   }
-
-  const showPending = pending && (pending.address === '' || pending.address.toLowerCase() === address?.toLowerCase())
 
   return (
     <section className="space-y-4">
@@ -48,19 +42,6 @@ export function Menu({ jersey, onCustomize, invited, onRanked, onPractice, onHos
           {t('menu.tagline')}
         </p>
       </div>
-
-      {showPending && (
-        <div className="panel space-y-3 p-4" style={{ borderColor: 'rgba(198,255,61,0.4)' }}>
-          <p className="text-sm font-semibold">{pending.won ? t('menu.pendingWin') : t('menu.pendingLoss')}</p>
-          <SaveResult
-            won={pending.won}
-            onSaved={() => {
-              clearPending()
-              setPending(null)
-            }}
-          />
-        </div>
-      )}
 
       <button
         type="button"

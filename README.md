@@ -6,7 +6,7 @@ Built with [Arc Studio](https://studio.arc.io)
 
 ## Features
 
-- Ranked and practice matches against a bot
+- Ranked and practice matches against a bot. A ranked result can be saved onchain only on the result screen right after the match; skipping or leaving discards it
 - Friend matches over a shareable link (peer to peer, free, not saved to the leaderboard)
 - Online matches between two wallets on Arc Testnet: private rooms with a share link, a ranked quick-match queue, hidden moves that both players reveal, a 20 second deadline per step with a forfeit claim, and a verified leaderboard
 - Customize screen with live preview: shirt colour, pattern, secondary colour, number and name tag; ball design and trail; stadium theme (day, night, rainy, sunset, snow)

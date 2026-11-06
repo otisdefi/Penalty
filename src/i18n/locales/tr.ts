@@ -27,8 +27,6 @@ const tr: Locale = {
 
     'menu.kicker': 'Penaltı atışları',
     'menu.tagline': 'Beş atışlık seri. Kaleciyi şaşırt, sonucunu Arc Test Ağı tablosuna kaydet.',
-    'menu.pendingWin': 'Henüz kaydedilmemiş bir dereceli galibiyetin var.',
-    'menu.pendingLoss': 'Henüz kaydedilmemiş bir dereceli yenilgin var.',
     'menu.yourShirt': 'Formanı',
     'menu.number': 'No: {n}',
     'menu.customize': 'Forma, top ve stadyumu özelleştir',
@@ -307,6 +305,9 @@ const tr: Locale = {
     'ready.ready': 'Hazırım',
     'online.readyHint': 'Oluşturmak, katılmak veya sıraya girmek senin "Hazır"ındır. {s} saniyelik hamle saati iki oyuncu da içeri girince başlar, bu yüzden önce formanı ayarla.',
     'online.lobbyShare': 'Formanın ve adın, rakibin katılır katılmaz ve her değişiklikte ona gönderilir. Stadyum ev sahibinindir; top senin kalır.',
+    'save.skip': "Atla",
+    'save.skipped': "Atlandı. Bu sonuç kaydedilmeyecek.",
+    'save.note': "Dereceli sonuçlar yalnızca şimdi kaydedersen zincire yazılır.",
   },
 }
 

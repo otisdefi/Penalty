@@ -27,8 +27,6 @@ const es: Locale = {
 
     'menu.kicker': 'Tanda de penales',
     'menu.tagline': 'Al mejor de cinco. Engaña al portero y guarda tu resultado en la tabla de Arc Testnet.',
-    'menu.pendingWin': 'Tienes una victoria clasificatoria sin guardar.',
-    'menu.pendingLoss': 'Tienes una derrota clasificatoria sin guardar.',
     'menu.yourShirt': 'Tu camiseta',
     'menu.number': 'N.º {n}',
     'menu.customize': 'Personaliza camiseta, balón y estadio',
@@ -307,6 +305,9 @@ const es: Locale = {
     'ready.ready': 'Listo',
     'online.readyHint': 'Crear, unirte o entrar en la cola es tu "Listo". El reloj de {s} segundos empieza cuando están los dos jugadores, así que elige antes tu camiseta.',
     'online.lobbyShare': 'Tu camiseta y tu nombre se envían a tu rival cuando entra y cada vez que los cambias. El estadio es el del anfitrión; tu balón sigue siendo tuyo.',
+    'save.skip': "Omitir",
+    'save.skipped': "Omitido. Este resultado no se guardará.",
+    'save.note': "Los resultados clasificados solo se guardan onchain si los guardas ahora.",
   },
 }
 

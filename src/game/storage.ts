@@ -9,12 +9,6 @@ export interface Habits {
   lastShot: 0 | 1 | 2 | null
 }
 
-export interface PendingRanked {
-  matchId: `0x${string}`
-  won: boolean
-  address: string
-}
-
 export const emptyHabits = (): Habits => ({
   shots: [0, 0, 0],
   dives: [0, 0, 0],
@@ -52,8 +46,7 @@ export function loadHabits(): Habits {
 }
 export const saveHabits = (h: Habits) => write('tb:habits', h)
 
-export const loadPending = () => read<PendingRanked | null>('tb:pending', null)
-export const savePending = (p: PendingRanked) => write('tb:pending', p)
+/** Unsaved ranked results are no longer kept. This removes one left over from an older version. */
 export function clearPending() {
   try {
     localStorage.removeItem('tb:pending')
