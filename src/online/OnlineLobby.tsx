@@ -3,6 +3,7 @@ import { Check, Copy, Loader2 } from 'lucide-react'
 import { QUEUE_TTL_S } from './config'
 import type { OnchainMatch } from './helpers'
 import { buildShareLink } from '@/lib/share'
+import { useI18n } from '@/i18n'
 
 interface Props {
   matchId: bigint
@@ -16,6 +17,7 @@ interface Props {
 
 /** Waiting room: a ranked queue search, or a private room with a share link. */
 export function OnlineLobby({ matchId, m, roomCode, chainNow, busy, error, onCancel }: Props) {
+  const { t, n } = useI18n()
   const [link, setLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [copyError, setCopyError] = useState(false)
@@ -49,41 +51,41 @@ export function OnlineLobby({ matchId, m, roomCode, chainNow, busy, error, onCan
     <div className="panel space-y-4 p-5 text-center">
       {m.ranked ? (
         <>
-          <h2 className="display text-3xl font-extrabold">Finding an opponent</h2>
+          <h2 className="display text-3xl font-extrabold text-balance">{t('lobby.finding')}</h2>
           <p className="flex items-center justify-center gap-2 text-sm" style={{ color: 'var(--muted)' }}>
             <Loader2 size={15} className="animate-spin" />
-            {queueLeft > 0 ? `Searching... ${queueLeft}s left` : 'No opponent yet. Your search has expired.'}
+            {queueLeft > 0 ? t('lobby.searching', { s: n(queueLeft) }) : t('lobby.expired')}
           </p>
           <p className="text-xs text-pretty" style={{ color: 'var(--subtle)' }}>
-            The match starts the moment another player queues. Ranked results update the verified leaderboard.
+            {t('lobby.rankedHint')}
           </p>
         </>
       ) : (
         <>
-          <h2 className="display text-3xl font-extrabold">Room #{matchId.toString()}</h2>
+          <h2 className="display text-3xl font-extrabold">{t('lobby.room', { id: matchId.toString() })}</h2>
           <p className="text-sm text-pretty" style={{ color: 'var(--muted)' }}>
-            Send this link to your friend. The match starts as soon as they join. Anyone with the link can join, so share it privately.
+            {t('lobby.sendLink')}
           </p>
           {roomCode ? (
             <div className="flex items-center gap-2 rounded-2xl p-2" style={{ background: 'rgba(255,255,255,0.06)' }}>
-              <span className="mono min-w-0 flex-1 truncate px-2 text-left text-xs">{link ?? 'Creating link...'}</span>
+              <span className="mono min-w-0 flex-1 truncate px-2 text-left text-xs">{link ?? t('lobby.creatingLink')}</span>
               <button type="button" onClick={() => void copy()} disabled={!link} className="btn btn-primary" style={{ width: 'auto', minHeight: 44 }}>
                 {copied ? <Check size={16} /> : <Copy size={16} />}
-                {copied ? 'Copied' : 'Copy'}
+                {copied ? t('common.copied') : t('common.copy')}
               </button>
             </div>
           ) : (
             <p className="text-xs" style={{ color: 'var(--bad)' }}>
-              The room code is stored on the device that created this room, so the link cannot be shown here.
+              {t('lobby.noCode')}
             </p>
           )}
           {copyError && (
             <p className="text-xs" style={{ color: 'var(--bad)' }}>
-              Copy failed. Select the link and copy it manually.
+              {t('lobby.copyFailed')}
             </p>
           )}
           <p className="flex items-center justify-center gap-2 text-sm" style={{ color: 'var(--muted)' }}>
-            <Loader2 size={15} className="animate-spin" /> Waiting for your friend
+            <Loader2 size={15} className="animate-spin" /> {t('friend.waitingShort')}
           </p>
         </>
       )}
@@ -94,7 +96,7 @@ export function OnlineLobby({ matchId, m, roomCode, chainNow, busy, error, onCan
       )}
       <button type="button" className="btn btn-ghost" disabled={cancelling} onClick={onCancel}>
         {cancelling ? <Loader2 size={16} className="animate-spin" /> : null}
-        {m.ranked ? 'Stop searching' : 'Cancel room'}
+        {m.ranked ? t('lobby.stop') : t('lobby.cancelRoom')}
       </button>
     </div>
   )

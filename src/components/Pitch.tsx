@@ -4,6 +4,7 @@ import type { Jersey } from '../game/storage'
 import { YELLOW } from '../lib/color'
 import { BallArt, JerseyDot, STADIUM_PALETTE, StadiumBackground, StadiumOverlay, TrailPuff } from '../cosmetics/art'
 import { DEFAULT_LOOK, type Look } from '../cosmetics/types'
+import { useI18n } from '../i18n'
 
 interface Props {
   kick: Kick | null
@@ -42,14 +43,15 @@ function PlayerDot({ jersey, number, acting }: { jersey: Jersey; number: number 
   )
 }
 
-function Label({ mine, text }: { mine: boolean; text: string }) {
+function Label({ mine, text, you }: { mine: boolean; text: string; you: string }) {
+  const w = Math.max(22, 8 + you.length * 5.6)
   return (
     <g transform={`translate(0 ${R + 5})`} pointerEvents="none">
       {mine ? (
         <>
-          <rect x="-11" y="0" width="22" height="10" rx="2.5" fill={YELLOW} />
+          <rect x={-w / 2} y="0" width={w} height="10" rx="2.5" fill={YELLOW} />
           <text x="0" y="7.6" textAnchor="middle" fontSize="7.5" fontWeight="800" fill="#0a1530" letterSpacing="0.6">
-            YOU
+            {you}
           </text>
         </>
       ) : (
@@ -78,7 +80,9 @@ function Glove() {
 
 const ease = 'cubic-bezier(0.15, 0.75, 0.35, 1)'
 
-export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, rivalLabel = 'Opponent', look = DEFAULT_LOOK }: Props) {
+export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, rivalLabel, look = DEFAULT_LOOK }: Props) {
+  const { t } = useI18n()
+  const rival = rivalLabel ?? t('rival.opponent')
   const pal = STADIUM_PALETTE[look.stadium]
   const iShoot = shooterTeam === myTeam
   const [deflectedKick, setDeflectedKick] = useState<Kick | null>(null)
@@ -115,7 +119,7 @@ export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, riv
       viewBox={`0 0 ${PITCH_W} ${PITCH_H}`}
       className="block h-full w-full"
       role="img"
-      aria-label="Penalty area close-up, goal at the top and the penalty spot at the bottom"
+      aria-label={t('pitch.aria')}
     >
       <defs>
         <pattern id="net" width="8" height="8" patternUnits="userSpaceOnUse">
@@ -169,14 +173,14 @@ export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, riv
       })}
       {pick !== null && !kick && (
         <text x={ZONE_X[pick]} y="33" textAnchor="middle" fontSize="11" fontWeight="800" fill="#c6ff3d" letterSpacing="1.2">
-          {role === 'shoot' ? 'AIM' : 'DIVE'}
+          {role === 'shoot' ? t('pitch.aim') : t('pitch.dive')}
         </text>
       )}
 
       {/* goalkeeper: numbered circle on the goal line, slides to the chosen side */}
       <g style={{ transform: `translate(${kx}px, ${KEEPER.y}px)`, transition: kick ? `transform 330ms ${ease} ${kdelay}ms` : 'none' }}>
         <PlayerDot jersey={keeperKit} number={1} />
-        <Label mine={!iShoot} text={keeperKit.tag || rivalLabel} />
+        <Label mine={!iShoot} text={keeperKit.tag || rival} you={t('you')} />
         {saved && (
           <g transform="translate(16 -9)">
             <Glove />
@@ -192,7 +196,7 @@ export default function Pitch({ kick, kits, pick, role, shooterTeam, myTeam, riv
         }}
       >
         <PlayerDot jersey={shooterKit} number={shooterKit.number} acting />
-        <Label mine={iShoot} text={shooterKit.tag || rivalLabel} />
+        <Label mine={iShoot} text={shooterKit.tag || rival} you={t('you')} />
       </g>
 
       {/* ball trail: ghosts that follow the ball and fade out */}

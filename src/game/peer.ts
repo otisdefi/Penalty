@@ -68,10 +68,11 @@ export type FriendErrorKind = 'service' | 'friend' | 'expired' | 'browser'
 
 export interface FriendError {
   kind: FriendErrorKind
-  title: string
-  message: string
-  hint: string
+  role: 'host' | 'guest'
 }
+
+/** Short non-fatal messages for the host while waiting. The screen translates them. */
+export type FriendNotice = 'trouble' | 'incomplete' | 'dropped'
 
 export const ROOM_TTL_MS = 10 * 60 * 1000
 export const MAX_RECONNECTS = 8
@@ -79,43 +80,7 @@ export const MAX_RECONNECTS = 8
 const BACKOFF_S = [1, 2, 4, 8, 8, 8, 8, 8]
 
 export function friendError(kind: FriendErrorKind, role: 'host' | 'guest'): FriendError {
-  switch (kind) {
-    case 'service':
-      return {
-        kind,
-        title: 'Matchmaking service unreachable',
-        message: "We couldn't reach the service that connects players, even after several tries.",
-        hint: 'Check your internet connection and try again. If it keeps happening, the service may be down: wait a minute and retry.',
-      }
-    case 'friend':
-      return {
-        kind,
-        title: "Couldn't connect to your friend",
-        message: 'The room is open, but the direct connection between you two did not complete.',
-        hint: 'Ask your friend to reopen the link and keep their tab open. Switching one of you between Wi-Fi and mobile data often fixes it.',
-      }
-    case 'expired':
-      return role === 'host'
-        ? {
-            kind,
-            title: 'Room expired',
-            message: 'Nobody joined within 10 minutes, so the room was closed.',
-            hint: 'Create a new room and send your friend the new link.',
-          }
-        : {
-            kind,
-            title: 'Room not found',
-            message: 'This room has expired or was closed by the host.',
-            hint: 'Ask your friend to create a new room and send you a fresh link.',
-          }
-    case 'browser':
-      return {
-        kind,
-        title: 'Browser not supported',
-        message: "This browser can't make peer-to-peer connections.",
-        hint: 'Open the game in a recent version of Chrome, Safari or Firefox.',
-      }
-  }
+  return { kind, role }
 }
 
 const errType = (err: unknown): string => (err as { type?: string } | null)?.type ?? ''
@@ -214,7 +179,7 @@ interface HostCallbacks {
   onWaiting: (id: string, expiresAt: number) => void
   onStatus: (s: HostStatus) => void
   /** A non-fatal problem worth telling the host about, or null to clear it. */
-  onNotice: (message: string | null) => void
+  onNotice: (notice: FriendNotice | null) => void
   onConnected: (link: FriendLink) => void
   onError: (e: FriendError) => void
 }
@@ -329,7 +294,7 @@ export function openHost(cb: HostCallbacks): () => void {
         scheduleReconnect()
         return
       case 'webrtc':
-        if (!connected) cb.onNotice("Your friend's connection hit a problem. They can reopen the link to try again.")
+        if (!connected) cb.onNotice('trouble')
         return
       case 'peer-unavailable':
         return
@@ -379,13 +344,13 @@ export function openHost(cb: HostCallbacks): () => void {
           if (connected) return
           pendingConn = false
           conn.close()
-          cb.onNotice("Your friend's connection did not complete. Ask them to reopen the link.")
+          cb.onNotice('incomplete')
         }, 20_000)
         const dropped = () => {
           if (connected) return
           clearTimeout(giveUp)
           pendingConn = false
-          cb.onNotice("Your friend's connection dropped before the match started. They can reopen the link.")
+          cb.onNotice('dropped')
         }
         conn.on('error', dropped)
         conn.on('close', dropped)

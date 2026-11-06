@@ -1,3 +1,4 @@
+import type { MessageKey } from '../i18n/types'
 export const TAG_MAX = 8
 
 /** Only letters, digits, space, dot, dash and underscore can appear in a name tag. */
@@ -50,8 +51,8 @@ export function safeTag(raw: unknown): string {
   return tagProblem(raw) || tagProblem(trimmed) ? '' : trimmed
 }
 
-export function tagMessage(problem: TagProblem): string | null {
-  if (problem === 'link') return 'Links and handles are not allowed in a name tag.'
-  if (problem === 'word') return 'That name tag is not allowed. Try another one.'
+export function tagMessage(problem: TagProblem): MessageKey | null {
+  if (problem === 'link') return 'tag.link'
+  if (problem === 'word') return 'tag.word'
   return null
 }

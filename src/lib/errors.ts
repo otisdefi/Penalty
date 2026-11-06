@@ -1,3 +1,5 @@
+import { translate } from '@/i18n'
+
 export function isUserRejection(error: unknown): boolean {
   const e = error as { code?: number; message?: string; shortMessage?: string } | null
   const text = `${e?.shortMessage ?? ''} ${e?.message ?? ''}`.toLowerCase()
@@ -7,16 +9,16 @@ export function isUserRejection(error: unknown): boolean {
 export function parseOnchainError(error: unknown): string {
   const e = error as { message?: string; shortMessage?: string } | null
   const text = `${e?.shortMessage ?? ''} ${e?.message ?? ''}`.toLowerCase()
-  if (isUserRejection(error)) return 'Transaction cancelled.'
+  if (isUserRejection(error)) return translate('err.cancelled')
   if (text.includes('insufficient funds') || text.includes('exceeds balance')) {
-    return 'Not enough USDC for gas. Use Get test USDC in the sidebar, then try again.'
+    return translate('err.noGas')
   }
-  if (text.includes('overflow')) return 'This record is full and cannot take another result.'
-  if (text.includes('reverted')) return 'The transaction was rejected by the contract.'
+  if (text.includes('overflow')) return translate('err.recordFull')
+  if (text.includes('reverted')) return translate('err.reverted')
   if (text.includes('network') || text.includes('timeout')) {
-    return 'Network issue. Check your connection and try again.'
+    return translate('err.network')
   }
-  return 'Something went wrong. Please try again.'
+  return translate('err.generic')
 }
 
 export const shortAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`

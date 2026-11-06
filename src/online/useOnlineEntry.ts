@@ -1,3 +1,4 @@
+import { translate } from '@/i18n'
 import { useCallback, useState } from 'react'
 import { useAccount, usePublicClient, useSendTransaction, useSwitchChain } from 'wagmi'
 import { encodeFunctionData } from 'viem'
@@ -32,7 +33,7 @@ export function useOnlineEntry() {
       build: (keyAddress: `0x${string}`, wallet: `0x${string}`) => { data: Hex; roomCode?: Hex },
     ): Promise<bigint | null> => {
       if (!publicClient || !MATCH_ADDRESS || !address) {
-        setError('Connect your wallet to play online.')
+        setError(translate('online.err.connect'))
         return null
       }
       setError(null)

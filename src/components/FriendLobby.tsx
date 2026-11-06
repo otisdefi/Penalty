@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AlertTriangle, Check, Copy, Loader2, RefreshCw, Share2, WifiOff } from 'lucide-react'
-import { friendError, joinRoom, openHost, MAX_RECONNECTS, type FriendError, type FriendLink, type HostStatus } from '@/game/peer'
+import { friendError, joinRoom, openHost, MAX_RECONNECTS, type FriendError, type FriendLink, type FriendNotice, type HostStatus } from '@/game/peer'
+import { useI18n, type MessageKey } from '@/i18n'
 import type { Jersey } from '@/game/storage'
 import type { StadiumId } from '@/cosmetics/types'
 import { buildShareLink } from '@/lib/share'
@@ -15,10 +16,26 @@ interface Props {
   onCancel: () => void
 }
 
-const formatClock = (ms: number): string => {
+const formatClock = (ms: number, pad: (v: number) => string): string => {
   const total = Math.max(0, Math.ceil(ms / 1000))
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
+  return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`
 }
+
+const ERROR_KEYS = {
+  service: ['friend.err.service.title', 'friend.err.service.message', 'friend.err.service.hint'],
+  friend: ['friend.err.friend.title', 'friend.err.friend.message', 'friend.err.friend.hint'],
+  expiredHost: ['friend.err.expiredHost.title', 'friend.err.expiredHost.message', 'friend.err.expiredHost.hint'],
+  expiredGuest: ['friend.err.expiredGuest.title', 'friend.err.expiredGuest.message', 'friend.err.expiredGuest.hint'],
+  browser: ['friend.err.browser.title', 'friend.err.browser.message', 'friend.err.browser.hint'],
+} as const satisfies Record<string, readonly [MessageKey, MessageKey, MessageKey]>
+
+const NOTICE_KEYS: Record<FriendNotice, MessageKey> = {
+  trouble: 'friend.notice.trouble',
+  incomplete: 'friend.notice.incomplete',
+  dropped: 'friend.notice.dropped',
+}
+
+const errorKeys = (e: FriendError) => (e.kind === 'expired' ? ERROR_KEYS[e.role === 'host' ? 'expiredHost' : 'expiredGuest'] : ERROR_KEYS[e.kind])
 
 /** Keep the screen on while waiting, where the browser allows it. Phones sleep otherwise and drop the room. */
 function useWakeLock(active: boolean): void {
@@ -50,6 +67,7 @@ function useWakeLock(active: boolean): void {
 }
 
 export function FriendLobby({ role, room, jersey, stadium, onReady, onCancel }: Props) {
+  const { t, n } = useI18n()
   const [runKey, setRunKey] = useState(0)
   const [roomId, setRoomId] = useState<string | null>(room)
   const [link, setLink] = useState<string | null>(null)
@@ -57,9 +75,9 @@ export function FriendLobby({ role, room, jersey, stadium, onReady, onCancel }: 
   const [now, setNow] = useState(0)
   const [hostStatus, setHostStatus] = useState<HostStatus>({ state: 'waiting', attempt: 0, max: MAX_RECONNECTS })
   const [error, setError] = useState<FriendError | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [notice, setNotice] = useState<FriendNotice | null>(null)
   const [copied, setCopied] = useState<'link' | 'code' | null>(null)
-  const [shareNote, setShareNote] = useState<string | null>(null)
+  const [shareNote, setShareNote] = useState<MessageKey | null>(null)
   const jerseyRef = useRef(jersey)
   const stadiumRef = useRef(stadium)
   const readyRef = useRef(onReady)
@@ -158,7 +176,7 @@ export function FriendLobby({ role, room, jersey, stadium, onReady, onCancel }: 
       setCopied(what)
       setTimeout(() => setCopied(null), 1800)
     } catch {
-      setShareNote('Copy was blocked by the browser. Select the text and copy it by hand.')
+      setShareNote('friend.copyBlocked')
     }
   }
 
@@ -166,9 +184,9 @@ export function FriendLobby({ role, room, jersey, stadium, onReady, onCancel }: 
   const share = async () => {
     if (!link) return
     try {
-      await navigator.share({ title: 'Tiebreaker penalty shootout', text: `Play a penalty shootout with me. Room ${roomId?.toUpperCase()}`, url: link })
+      await navigator.share({ title: t('friend.shareTitle'), text: t('friend.shareText', { code: roomId?.toUpperCase() ?? '' }), url: link })
     } catch (e) {
-      if ((e as { name?: string }).name !== 'AbortError') setShareNote('Sharing did not work here. Use Copy instead.')
+      if ((e as { name?: string }).name !== 'AbortError') setShareNote('friend.shareFailed')
     }
   }
 
@@ -176,21 +194,22 @@ export function FriendLobby({ role, room, jersey, stadium, onReady, onCancel }: 
 
   if (error) {
     const canRetry = !(role === 'guest' && error.kind === 'expired') && error.kind !== 'browser'
+    const [titleKey, messageKey, hintKey] = errorKeys(error)
     return (
       <div className="panel mx-auto max-w-md space-y-4 p-6 text-center" role="alert">
         <AlertTriangle size={30} className="mx-auto" style={{ color: 'var(--bad)' }} aria-hidden />
-        <h2 className="display text-2xl font-extrabold">{error.title}</h2>
-        <p className="text-sm text-pretty">{error.message}</p>
+        <h2 className="display text-2xl font-extrabold text-balance">{t(titleKey)}</h2>
+        <p className="text-sm text-pretty">{t(messageKey)}</p>
         <p className="text-sm text-pretty" style={{ color: 'var(--muted)' }}>
-          {error.hint}
+          {t(hintKey)}
         </p>
         {canRetry && (
           <button type="button" className="btn btn-primary" onClick={retry}>
-            <RefreshCw size={16} /> {role === 'host' ? 'Try again with a new room' : 'Try again'}
+            <RefreshCw size={16} /> {role === 'host' ? t('friend.tryNewRoom') : t('common.tryAgain')}
           </button>
         )}
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Back to menu
+          {t('common.backToMenu')}
         </button>
       </div>
     )
@@ -199,12 +218,12 @@ export function FriendLobby({ role, room, jersey, stadium, onReady, onCancel }: 
   if (role === 'guest') {
     return (
       <div className="panel mx-auto max-w-md space-y-4 p-6 text-center">
-        <h2 className="display text-3xl font-extrabold">Joining match</h2>
+        <h2 className="display text-3xl font-extrabold text-balance">{t('friend.joining')}</h2>
         <p className="flex items-center justify-center gap-2 text-sm" style={{ color: 'var(--muted)' }}>
-          <Loader2 size={15} className="animate-spin" /> Connecting to your friend
+          <Loader2 size={15} className="animate-spin" /> {t('friend.connectingFriend')}
         </p>
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
     )
@@ -215,19 +234,19 @@ export function FriendLobby({ role, room, jersey, stadium, onReady, onCancel }: 
 
   return (
     <div className="panel mx-auto max-w-md space-y-4 p-6 text-center">
-      <h2 className="display text-3xl font-extrabold">{roomId ? 'Waiting for your friend...' : 'Opening your room...'}</h2>
+      <h2 className="display text-3xl font-extrabold">{roomId ? t('match.waitingFriend') : t('friend.opening')}</h2>
 
       {roomId ? (
         <>
           <p className="text-sm text-pretty" style={{ color: 'var(--muted)' }}>
-            Send your friend the link or the code. The match starts as soon as they join. Keep this tab open.
+            {t('friend.sendIt')}
           </p>
 
           <div className="rounded-2xl p-3" style={{ background: 'rgba(255,255,255,0.06)' }}>
             <span className="block text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--muted)' }}>
-              Room code
+              {t('friend.roomCode')}
             </span>
-            <span className="mono block text-3xl font-bold tracking-[0.12em]" aria-label={`Room code ${roomId}`}>
+            <span className="mono block text-3xl font-bold tracking-[0.12em]" aria-label={t('friend.roomCodeAria', { code: roomId })}>
               {roomId.toUpperCase()}
             </span>
           </div>
@@ -235,58 +254,58 @@ export function FriendLobby({ role, room, jersey, stadium, onReady, onCancel }: 
           <div className={`grid gap-2 ${canShare ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <button type="button" onClick={() => void copy('link')} disabled={!link} className="btn btn-primary" style={{ minHeight: 48 }}>
               {copied === 'link' ? <Check size={16} /> : <Copy size={16} />}
-              {copied === 'link' ? 'Copied' : 'Copy link'}
+              {copied === 'link' ? t('common.copied') : t('friend.copyLink')}
             </button>
             <button type="button" onClick={() => void copy('code')} className="btn btn-ghost" style={{ minHeight: 48 }}>
               {copied === 'code' ? <Check size={16} /> : <Copy size={16} />}
-              {copied === 'code' ? 'Copied' : 'Copy code'}
+              {copied === 'code' ? t('common.copied') : t('friend.copyCode')}
             </button>
             {canShare && (
               <button type="button" onClick={() => void share()} disabled={!link} className="btn btn-ghost" style={{ minHeight: 48 }}>
-                <Share2 size={16} /> Share
+                <Share2 size={16} /> {t('common.share')}
               </button>
             )}
           </div>
 
           <p className="mono text-sm" style={{ color: 'var(--yellow)' }} aria-live="off">
-            Room open for {formatClock(remaining)}
+            {t('friend.openFor', { time: formatClock(remaining, (v) => n(v, { minimumIntegerDigits: 2 })) })}
           </p>
         </>
       ) : (
         <p className="text-sm text-pretty" style={{ color: 'var(--muted)' }}>
-          Connecting to the matchmaking service so your friend can find you.
+          {t('friend.connectingService')}
         </p>
       )}
 
       <p className="flex items-center justify-center gap-2 text-sm" style={{ color: reconnecting || offline ? 'var(--yellow)' : 'var(--muted)' }} role="status">
         {offline ? (
           <>
-            <WifiOff size={15} /> You're offline. We'll reconnect when you're back.
+            <WifiOff size={15} /> {t('friend.offline')}
           </>
         ) : reconnecting ? (
           <>
-            <Loader2 size={15} className="animate-spin" /> Reconnecting... ({Math.min(hostStatus.attempt, hostStatus.max)}/{hostStatus.max})
+            <Loader2 size={15} className="animate-spin" /> {t('friend.reconnecting', { n: n(Math.min(hostStatus.attempt, hostStatus.max)), max: n(hostStatus.max) })}
           </>
         ) : (
           <>
-            <Loader2 size={15} className="animate-spin" /> {roomId ? 'Waiting for your friend' : 'Connecting'}
+            <Loader2 size={15} className="animate-spin" /> {roomId ? t('friend.waitingShort') : t('friend.connecting')}
           </>
         )}
       </p>
 
       {notice && (
         <p className="text-xs text-pretty" style={{ color: 'var(--yellow)' }} role="status">
-          {notice}
+          {t(NOTICE_KEYS[notice])}
         </p>
       )}
       {shareNote && (
         <p className="text-xs text-pretty" style={{ color: 'var(--muted)' }} role="status">
-          {shareNote}
+          {t(shareNote)}
         </p>
       )}
 
       <button type="button" className="btn btn-ghost" onClick={onCancel}>
-        Cancel
+        {t('common.cancel')}
       </button>
     </div>
   )

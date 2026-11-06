@@ -21,17 +21,20 @@ import { isMuted, setMuted as setWhistleMuted } from '@/lib/whistle'
 import { shortAddress } from '@/lib/errors'
 import { textOn, YELLOW } from '@/lib/color'
 import { buildTxExplorerUrl, requireChain } from '@/onchain-facts'
+import { LanguageButton } from '@/components/LanguageButton'
+import { useI18n, type MessageKey, type TFunction } from '@/i18n'
 
 interface Props {
   matchId: bigint
   onExit: () => void
 }
 
-const SHOOT_LABELS = ['LEFT', 'CENTER', 'RIGHT'] as const
-const KEEP_LABELS = ['DIVE LEFT', 'STAY', 'DIVE RIGHT'] as const
+const SHOOT_LABELS = ['match.shoot.left', 'match.shoot.center', 'match.shoot.right'] as const
+const KEEP_LABELS = ['match.keep.left', 'match.keep.stay', 'match.keep.right'] as const
 const RIVAL_JERSEY: Jersey = { color: '#3a86ff', number: 7 }
 
 export function OnlineMatchScreen({ matchId, onExit }: Props) {
+  const { t, n } = useI18n()
   const o = useOnlineMatch(matchId)
   const { address } = useAccount()
   const publicClient = usePublicClient({ chainId: ONLINE_CHAIN_ID })
@@ -97,20 +100,20 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
   })
 
   if (!MATCH_ADDRESS) {
-    return <Shell onExit={onExit} muted={muted} onMute={toggleMute} badge="Online"><Notice text="Online play is not configured." /></Shell>
+    return <Shell onExit={onExit} muted={muted} onMute={toggleMute} badge={t('online.badge')}><Notice text={t('online.notConfiguredShort')} /></Shell>
   }
   if (!m) {
     return (
-      <Shell onExit={onExit} muted={muted} onMute={toggleMute} badge="Online">
-        <Notice text={o.loadError ? 'Could not load this match. Check your connection.' : 'Loading the match...'} busy={!o.loadError} />
+      <Shell onExit={onExit} muted={muted} onMute={toggleMute} badge={t('online.badge')}>
+        <Notice text={o.loadError ? t('online.loadError') : t('online.loading')} busy={!o.loadError} />
       </Shell>
     )
   }
 
-  const badge = m.ranked ? 'Online · Ranked' : 'Online · Private'
+  const badge = m.ranked ? t('online.badgeRanked') : t('online.badgePrivate')
 
-  if (stage === 'missing') return <Shell onExit={onExit} muted={muted} onMute={toggleMute} badge={badge}><Notice text="This match does not exist." action="Back" onAction={onExit} /></Shell>
-  if (stage === 'cancelled') return <Shell onExit={onExit} muted={muted} onMute={toggleMute} badge={badge}><Notice text="This room was cancelled." action="Back" onAction={onExit} /></Shell>
+  if (stage === 'missing') return <Shell onExit={onExit} muted={muted} onMute={toggleMute} badge={badge}><Notice text={t('online.missing')} action={t('common.back')} onAction={onExit} /></Shell>
+  if (stage === 'cancelled') return <Shell onExit={onExit} muted={muted} onMute={toggleMute} badge={badge}><Notice text={t('online.cancelled')} action={t('common.back')} onAction={onExit} /></Shell>
 
   if (stage === 'open') {
     return (
@@ -146,7 +149,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
   const timerOn = stage === 'choose' || stage === 'committed' || stage === 'reveal' || stage === 'revealed'
   const myKit = kits[o.myTeam]
   const rivalAddress = o.mySeat === 2 ? m.p1 : m.p2
-  const rivalLabel = o.mySeat !== 0 && rivalAddress !== ZERO_ADDRESS ? shortAddress(rivalAddress) : 'Opponent'
+  const rivalLabel = o.mySeat !== 0 && rivalAddress !== ZERO_ADDRESS ? shortAddress(rivalAddress) : t('rival.opponent')
   const showResult = finished && !o.anim
 
   return (
@@ -156,7 +159,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
         kicksTaken={m.kicks}
         kits={kits}
         myTeam={o.myTeam}
-        rivalName="Opponent"
+        rivalName={t('rival.opponent')}
         shooterTeam={shooterTeam}
         done={finished}
         choosing={timerOn}
@@ -177,7 +180,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
             role="status"
           >
             <span className="display text-6xl font-extrabold leading-none tracking-wider" style={{ color: o.anim.goal ? YELLOW : '#ffffff' }}>
-              {o.anim.goal ? 'GOAL' : 'SAVED'}
+              {o.anim.goal ? t('banner.goal') : t('banner.saved')}
             </span>
           </div>
         )}
@@ -185,7 +188,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
 
       {!showResult && !finished && (
         <div className="space-y-1.5">
-          <StatusLine stage={stage} iShoot={iShoot} busy={o.busy} usingKey={o.usingKey} />
+          <StatusLine stage={stage} iShoot={iShoot} busy={o.busy} usingKey={o.usingKey} t={t} />
           <div className="grid grid-cols-3 gap-2">
             {([0, 1, 2] as const).map((d) => {
               const picked = o.pick === d
@@ -207,7 +210,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
                     boxShadow: picked ? '0 0 0 3px rgba(255,210,63,0.35)' : 'inset 0 0 0 1px rgba(255,255,255,0.25)',
                   }}
                 >
-                  <span className="display text-lg font-extrabold leading-tight tracking-wider">{labels[d]}</span>
+                  <span className="display text-lg font-extrabold leading-tight tracking-wider">{t(labels[d])}</span>
                 </button>
               )
             })}
@@ -216,12 +219,12 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
           {stage === 'reveal' && !o.usingKey && (
             <button type="button" className="btn btn-primary" disabled={!!o.busy} onClick={() => void o.reveal()}>
               {o.busy === 'reveal' ? <Loader2 size={16} className="animate-spin" /> : null}
-              Reveal my move
+              {t('online.revealMove')}
             </button>
           )}
           {stage === 'reveal' && o.usingKey && o.error && (
             <button type="button" className="btn btn-primary" disabled={!!o.busy} onClick={() => void o.reveal()}>
-              Retry reveal
+              {t('online.retryReveal')}
             </button>
           )}
 
@@ -229,14 +232,14 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
             <div className="panel space-y-2 p-3 text-center">
               <p className="text-sm font-semibold text-pretty">
                 {stage === 'expired-win'
-                  ? 'Your opponent missed the 20 second deadline. You can claim the match by forfeit.'
+                  ? t('online.expiredWin', { s: n(STEP_TIMEOUT_S) })
                   : stage === 'expired-late'
-                    ? 'You missed the 20 second deadline, so your opponent wins by forfeit. Settle the match to continue.'
-                    : 'Neither player moved in time. Close this match to free your wallet.'}
+                    ? t('online.expiredLate', { s: n(STEP_TIMEOUT_S) })
+                    : t('online.expiredNone')}
               </p>
               <button type="button" className="btn btn-primary" disabled={!!o.busy} onClick={() => void o.claim()}>
                 {o.busy === 'claim' ? <Loader2 size={16} className="animate-spin" /> : null}
-                {stage === 'expired-win' ? 'Claim win by forfeit' : stage === 'expired-late' ? 'Settle match' : 'Close match'}
+                {stage === 'expired-win' ? t('online.claimWin') : stage === 'expired-late' ? t('online.settle') : t('online.close')}
               </button>
             </div>
           )}
@@ -246,37 +249,37 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
               {o.error}
             </p>
           )}
-          {stage === 'spectator' && <p className="text-center text-xs" style={{ color: 'var(--muted)' }}>You are watching. Only the two players can move.</p>}
+          {stage === 'spectator' && <p className="text-center text-xs" style={{ color: 'var(--muted)' }}>{t('online.watching')}</p>}
         </div>
       )}
 
       {showResult && (
         <div className="panel space-y-3 p-4 text-center">
           <p className="display text-4xl font-extrabold" style={{ color: draw ? 'var(--muted)' : isWinner ? 'var(--good)' : 'var(--bad)' }}>
-            {draw ? 'No winner' : isWinner ? 'You win' : o.mySeat === 0 ? 'Match over' : 'You lose'} {o.mySeat === 2 ? `${m.score2}-${m.score1}` : `${m.score1}-${m.score2}`}
+            {draw ? t('online.noWinner') : isWinner ? t('match.youWin') : o.mySeat === 0 ? t('online.matchOver') : t('match.youLose')} {o.mySeat === 2 ? `${n(m.score2)}-${n(m.score1)}` : `${n(m.score1)}-${n(m.score2)}`}
           </p>
           <p className="text-sm text-pretty" style={{ color: 'var(--muted)' }}>
             {forfeit.data?.forfeit
               ? isWinner
-                ? 'Your opponent ran out of time, so the win was awarded by forfeit.'
-                : 'The match ended by forfeit after a missed deadline.'
+                ? t('online.forfeitWin')
+                : t('online.forfeitEnd')
               : draw
-                ? 'Neither player moved in time, or the match stayed level after the maximum number of kicks. No record changed.'
-                : 'Settled by the shootout.'}
+                ? t('online.drawNote')
+                : t('online.settledNote')}
           </p>
           {m.ranked && record.data && (
             <p className="text-xs tabular-nums" style={{ color: 'var(--muted)' }}>
-              Your verified record: {record.data[0]} wins, {record.data[1]} losses, streak {record.data[2]} (best {record.data[3]})
+              {t('online.record', { w: n(record.data[0]), l: n(record.data[1]), s: n(record.data[2]), b: n(record.data[3]) })}
             </p>
           )}
           {forfeit.data?.tx && (
             <a href={buildTxExplorerUrl(ONLINE_CHAIN_ID, forfeit.data.tx)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold underline" style={{ color: 'var(--lime)' }}>
-              View final transaction
+              {t('online.viewFinal')}
             </a>
           )}
           <Sweep o={o} />
           <button type="button" className="btn btn-primary" onClick={onExit}>
-            Back to online menu
+            {t('online.backMenu')}
           </button>
         </div>
       )}
@@ -291,6 +294,7 @@ function distinct(mine: Jersey, theirs: Jersey | null): Jersey {
 }
 
 function Sweep({ o }: { o: ReturnType<typeof useOnlineMatch> }) {
+  const { t, n } = useI18n()
   const decimals = requireChain(ONLINE_CHAIN_ID).nativeCurrency.decimals
   if (!o.myKeyRegistered || o.keyBalance <= 0n) return null
   const amount = Number(formatUnits(o.keyBalance, decimals))
@@ -298,22 +302,22 @@ function Sweep({ o }: { o: ReturnType<typeof useOnlineMatch> }) {
   return (
     <button type="button" className="btn btn-ghost" disabled={!!o.busy} onClick={() => void o.sweep()}>
       {o.busy === 'sweep' ? <Loader2 size={16} className="animate-spin" /> : null}
-      Return {amount.toFixed(2)} USDC from the helper key
+      {t('online.sweep', { amount: n(amount, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}
     </button>
   )
 }
 
-function StatusLine({ stage, iShoot, busy, usingKey }: { stage: string; iShoot: boolean; busy: string | null; usingKey: boolean }) {
+function StatusLine({ stage, iShoot, busy, usingKey, t }: { stage: string; iShoot: boolean; busy: string | null; usingKey: boolean; t: TFunction }) {
   let text = ''
-  if (busy === 'commit') text = usingKey ? 'Locking in your move...' : 'Confirm in your wallet to lock in your move...'
-  else if (busy === 'reveal') text = 'Revealing your move...'
-  else if (busy === 'claim') text = 'Settling the match...'
-  else if (stage === 'choose') text = iShoot ? 'You are the shooter. Pick where to shoot.' : 'You are the goalkeeper. Pick where to dive.'
-  else if (stage === 'committed') text = 'Move locked in. Waiting for your opponent to commit...'
-  else if (stage === 'reveal') text = usingKey ? 'Both moves are locked. Revealing yours...' : 'Both moves are locked. Reveal yours to continue.'
-  else if (stage === 'revealed') text = 'Revealed. Waiting for your opponent to reveal...'
-  else if (stage === 'deadline') text = 'Deadline reached. Confirming on the chain...'
-  else if (stage === 'expired-win' || stage === 'expired-late' || stage === 'expired-none') text = 'Deadline passed.'
+  if (busy === 'commit') text = usingKey ? t('online.locking') : t('online.lockingWallet')
+  else if (busy === 'reveal') text = t('online.revealing')
+  else if (busy === 'claim') text = t('online.settling')
+  else if (stage === 'choose') text = iShoot ? t('match.promptShoot') : t('match.promptKeep')
+  else if (stage === 'committed') text = t('online.committed')
+  else if (stage === 'reveal') text = usingKey ? t('online.bothLockedAuto') : t('online.bothLockedManual')
+  else if (stage === 'revealed') text = t('online.revealed')
+  else if (stage === 'deadline') text = t('online.deadlineReached')
+  else if (stage === 'expired-win' || stage === 'expired-late' || stage === 'expired-none') text = t('online.deadlinePassed')
   return (
     <p className="min-h-[18px] text-[13px] font-semibold" aria-live="polite">
       {text}
@@ -338,18 +342,22 @@ function Notice({ text, busy, action, onAction }: { text: string; busy?: boolean
 }
 
 function Shell({ children, onExit, muted, onMute, badge }: { children: React.ReactNode; onExit: () => void; muted: boolean; onMute: () => void; badge: string }) {
+  const { t } = useI18n()
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-2 px-4 pb-3 pt-1">
       <div className="flex items-center justify-between">
         <button type="button" onClick={onExit} className="flex min-h-[40px] items-center gap-1.5 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-          <ArrowLeft size={16} /> Leave
+          <ArrowLeft size={16} /> {t('common.leave')}
         </button>
         <span className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--lime)' }}>
           {badge}
         </span>
-        <button type="button" onClick={onMute} aria-label={muted ? 'Unmute' : 'Mute'} className="flex h-10 w-10 items-center justify-center" style={{ color: 'var(--muted)' }}>
-          {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-        </button>
+        <div className="flex items-center gap-1">
+          <LanguageButton />
+          <button type="button" onClick={onMute} aria-label={muted ? t('match.unmute') : t('match.mute')} className="flex h-10 w-10 items-center justify-center" style={{ color: 'var(--muted)' }}>
+            {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          </button>
+        </div>
       </div>
       {children}
     </div>

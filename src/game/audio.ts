@@ -1,3 +1,4 @@
+import { getLanguage, translate } from '../i18n'
 let ctx: AudioContext | null = null
 let muted = false
 let unlocked = false
@@ -181,31 +182,36 @@ function speech(): SpeechSynthesis | null {
   }
 }
 
-function pickVoice(synth: SpeechSynthesis): SpeechSynthesisVoice | null {
+const SPEECH_LOCALE: Record<string, string> = { en: 'en-US', tr: 'tr-TR', es: 'es-ES', pt: 'pt-BR', ru: 'ru-RU' }
+
+function pickVoice(synth: SpeechSynthesis, lang: string): SpeechSynthesisVoice | null {
   try {
     const voices = synth.getVoices()
-    return voices.find((v) => v.lang.toLowerCase().startsWith('en') && v.localService) ?? voices.find((v) => v.lang.toLowerCase().startsWith('en')) ?? null
+    return voices.find((v) => v.lang.toLowerCase().startsWith(lang) && v.localService) ?? voices.find((v) => v.lang.toLowerCase().startsWith(lang)) ?? null
   } catch {
     return null
   }
 }
 
-function speak(text: string, o: { pitch: number; rate: number; volume: number; maxMs: number }) {
+function speak(key: 'speech.goal' | 'speech.miss', o: { pitch: number; rate: number; volume: number; maxMs: number }) {
   if (muted || !unlocked) return
   const synth = speech()
   if (!synth) return
   try {
     synth.cancel()
-    const u = new SpeechSynthesisUtterance(text)
+    // Say it in the player's language when the device has a voice for it, otherwise in English.
+    const language = getLanguage()
+    const localVoice = pickVoice(synth, language)
+    const voice = localVoice ?? pickVoice(synth, 'en')
+    const u = new SpeechSynthesisUtterance(translate(key, undefined, localVoice ? language : 'en'))
     u.pitch = o.pitch
     u.rate = o.rate
     u.volume = o.volume
-    const voice = pickVoice(synth)
     if (voice) {
       u.voice = voice
       u.lang = voice.lang
     } else {
-      u.lang = 'en-US'
+      u.lang = localVoice ? (SPEECH_LOCALE[language] ?? language) : 'en-US'
     }
     synth.speak(u)
     window.clearTimeout(speechTimer)
@@ -253,12 +259,12 @@ export const sfx = {
   /** Goal: rising crowd roar plus a stretched, excited "Goooal!". */
   goal: () => {
     crowdCheer()
-    speak('Goooooal!', { pitch: 1.8, rate: 0.55, volume: 1, maxMs: 2900 })
+    speak('speech.goal', { pitch: 1.8, rate: 0.55, volume: 1, maxMs: 2900 })
   },
   /** Miss, post or save: dull crowd groan plus a low, drawn-out "Ohhh". */
   save: () => {
     crowdGroan()
-    speak('Ohhhh', { pitch: 0.35, rate: 0.5, volume: 0.9, maxMs: 1800 })
+    speak('speech.miss', { pitch: 0.35, rate: 0.5, volume: 0.9, maxMs: 1800 })
   },
   win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.22, { type: 'triangle', delay: i * 0.14 })),
   lose: () => [392, 330, 262].forEach((f, i) => tone(f, 0.3, { type: 'sine', delay: i * 0.2 })),

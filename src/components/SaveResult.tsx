@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { LEADERBOARD_ADDRESS, LEADERBOARD_CHAIN_ID, leaderboardAbi } from '@/contract'
 import { buildTxExplorerUrl } from '@/onchain-facts'
 import { isUserRejection, parseOnchainError } from '@/lib/errors'
+import { useT } from '@/i18n'
 
 interface Props {
   won: boolean
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function SaveResult({ won, onSaved }: Props) {
+  const t = useT()
   const { address, isConnected, chainId } = useAccount()
   const { switchChainAsync, isPending: switching } = useSwitchChain()
   const { writeContractAsync, data: hash, isPending } = useWriteContract()
@@ -48,18 +50,20 @@ export function SaveResult({ won, onSaved }: Props) {
 
   const busy = switching || isPending || confirming
   const label = switching
-    ? 'Switching network...'
+    ? t('save.switching')
     : isPending
-      ? 'Confirm in your wallet...'
+      ? t('save.confirm')
       : confirming
-        ? 'Saving to Arc Testnet...'
-        : `Save ${won ? 'win' : 'loss'} to leaderboard`
+        ? t('save.saving')
+        : won
+          ? t('save.saveWin')
+          : t('save.saveLoss')
 
   if (isSuccess && hash) {
     return (
       <div className="space-y-1 text-center">
         <p className="text-sm font-bold" style={{ color: 'var(--good)' }}>
-          Result saved to the leaderboard.
+          {t('save.saved')}
         </p>
         <a
           href={buildTxExplorerUrl(LEADERBOARD_CHAIN_ID, hash)}
@@ -68,7 +72,7 @@ export function SaveResult({ won, onSaved }: Props) {
           className="inline-flex items-center gap-1 text-xs font-semibold underline"
           style={{ color: 'var(--lime)' }}
         >
-          View transaction <ExternalLink size={12} />
+          {t('common.viewTx')} <ExternalLink size={12} />
         </a>
       </div>
     )
@@ -80,7 +84,7 @@ export function SaveResult({ won, onSaved }: Props) {
         <ConnectKitButton.Custom>
           {({ show }) => (
             <button type="button" onClick={show} className="btn btn-primary">
-              Connect wallet to save
+              {t('save.connect')}
             </button>
           )}
         </ConnectKitButton.Custom>
@@ -91,11 +95,11 @@ export function SaveResult({ won, onSaved }: Props) {
         </button>
       )}
       <p className="text-center text-xs text-pretty" style={{ color: 'var(--subtle) ' }}>
-        {won ? 'Saving a win adds to your streak and ranking.' : 'Saving a loss resets your streak. Skip it and your record stays as is.'}
+        {won ? t('save.hintWin') : t('save.hintLoss')}
       </p>
       {(error || receiptFailed) && (
         <p className="text-center text-xs" style={{ color: 'var(--bad)' }}>
-          {error ?? 'The transaction failed onchain. Please try again.'}
+          {error ?? t('save.failed')}
         </p>
       )}
     </div>

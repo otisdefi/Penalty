@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Volume2, VolumeX } from 'lucide-react'
+import { LanguageButton } from './LanguageButton'
+import { useI18n } from '@/i18n'
 import Pitch from './Pitch'
 import { Scoreboard } from './Scoreboard'
 import { SaveResult } from './SaveResult'
@@ -20,17 +22,19 @@ interface Props {
   myTeam: Team
   kits: Record<Team, Jersey>
   link: FriendLink | null
-  rivalName: string
+  rivalName: 'bot' | 'friend'
   /** Stadium chosen by the host in friend matches; otherwise the player's own. */
   stadium?: StadiumId
   onExit: () => void
 }
 
-const SHOOT_LABELS = ['LEFT', 'CENTER', 'RIGHT'] as const
-const KEEP_LABELS = ['DIVE LEFT', 'STAY', 'DIVE RIGHT'] as const
+const SHOOT_LABELS = ['match.shoot.left', 'match.shoot.center', 'match.shoot.right'] as const
+const KEEP_LABELS = ['match.keep.left', 'match.keep.stay', 'match.keep.right'] as const
 
 export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadium, onExit }: Props) {
+  const { t, n } = useI18n()
   const m = useMatch({ mode, myTeam, link })
+  const rivalText = rivalName === 'bot' ? t('rival.bot') : t('rival.friend')
   const mine = useCosmetics()
   const look: Look = { ball: mine.ball, trail: mine.trail, stadium: stadium ?? mine.stadium }
   const { address } = useAccount()
@@ -79,14 +83,17 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
     <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-2 px-4 pb-3 pt-1">
       <div className="flex items-center justify-between">
         <button type="button" onClick={onExit} className="flex min-h-[40px] items-center gap-1.5 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-          <ArrowLeft size={16} /> Leave
+          <ArrowLeft size={16} /> {t('common.leave')}
         </button>
         <span className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--lime)' }}>
-          {ranked ? 'Ranked' : mode === 'friend' ? 'Friend match' : 'Practice'}
+          {ranked ? t('match.ranked') : mode === 'friend' ? t('match.friend') : t('match.practice')}
         </span>
-        <button type="button" onClick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'} className="flex h-10 w-10 items-center justify-center" style={{ color: 'var(--muted)' }}>
-          {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-        </button>
+        <div className="flex items-center gap-1">
+          <LanguageButton />
+          <button type="button" onClick={toggleMute} aria-label={muted ? t('match.unmute') : t('match.mute')} className="flex h-10 w-10 items-center justify-center" style={{ color: 'var(--muted)' }}>
+            {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          </button>
+        </div>
       </div>
 
       <Scoreboard
@@ -94,7 +101,7 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
         kicksTaken={m.kicks.length}
         kits={kits}
         myTeam={myTeam}
-        rivalName={rivalName}
+        rivalName={rivalText}
         shooterTeam={shooterTeam}
         done={done}
         choosing={choosing}
@@ -105,7 +112,7 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
         className="relative mx-auto overflow-hidden rounded-3xl"
         style={{ border: '1px solid var(--line)', aspectRatio: '320 / 360', width: 'min(100%, calc(48dvh * 320 / 360))' }}
       >
-        <Pitch kick={m.anim} kits={kits} pick={m.myPick} role={m.role} shooterTeam={shooterTeam} myTeam={myTeam} rivalLabel={rivalName} look={look} />
+        <Pitch kick={m.anim} kits={kits} pick={m.myPick} role={m.role} shooterTeam={shooterTeam} myTeam={myTeam} rivalLabel={rivalText} look={look} />
         {m.anim && (
           <div
             key={m.kicks.length}
@@ -114,7 +121,7 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
             role="status"
           >
             <span className="display text-6xl font-extrabold leading-none tracking-wider" style={{ color: m.anim.goal ? YELLOW : '#ffffff' }}>
-              {m.anim.goal ? 'GOAL' : 'SAVED'}
+              {m.anim.goal ? t('banner.goal') : t('banner.saved')}
             </span>
           </div>
         )}
@@ -124,14 +131,14 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
         <div className="space-y-1.5">
           <p className="min-h-[18px] text-[13px] font-semibold" aria-live="polite">
             {m.phase === 'waiting'
-              ? 'Waiting for your friend...'
+              ? t('match.waitingFriend')
               : m.phase === 'whistle'
-                ? 'Referee whistle... get ready.'
+                ? t('match.whistle')
               : m.phase === 'reveal'
                 ? ' '
                 : iShoot
-                  ? 'You are the shooter. Pick where to shoot.'
-                  : 'You are the goalkeeper. Pick where to dive.'}
+                  ? t('match.promptShoot')
+                  : t('match.promptKeep')}
           </p>
           <div className="grid grid-cols-3 gap-2">
             {([0, 1, 2] as const).map((d) => {
@@ -154,14 +161,14 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
                     boxShadow: picked ? `0 0 0 3px rgba(255,210,63,0.35)` : 'inset 0 0 0 1px rgba(255,255,255,0.25)',
                   }}
                 >
-                  <span className="display text-lg font-extrabold leading-tight tracking-wider">{labels[d]}</span>
+                  <span className="display text-lg font-extrabold leading-tight tracking-wider">{t(labels[d])}</span>
                 </button>
               )
             })}
           </div>
           {m.notice && (
             <p className="text-center text-xs" style={{ color: 'var(--muted)' }}>
-              {m.notice}
+              {t(m.notice)}
             </p>
           )}
         </div>
@@ -169,9 +176,9 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
 
       {m.phase === 'aborted' && (
         <div className="panel space-y-3 p-4 text-center">
-          <p className="text-sm text-pretty">{m.abortReason}</p>
+          <p className="text-sm text-pretty">{m.abortReason ? t(m.abortReason) : ''}</p>
           <button type="button" className="btn btn-primary" onClick={onExit}>
-            Back to menu
+            {t('common.backToMenu')}
           </button>
         </div>
       )}
@@ -179,7 +186,7 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
       {done && (
         <div className="panel space-y-3 p-4">
           <p className="display text-center text-4xl font-extrabold" style={{ color: m.won ? 'var(--good)' : 'var(--bad)' }}>
-            {m.won ? 'You win' : 'You lose'} {m.status[myTeam]}-{m.status[rivalTeam]}
+            {m.won ? t('match.youWin') : t('match.youLose')} {n(m.status[myTeam])}-{n(m.status[rivalTeam])}
           </p>
           {ranked && mode === 'bot' && <SaveResult won={m.won} onSaved={clearPending} />}
           <button
@@ -188,10 +195,10 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, rivalName, stadi
             onClick={m.requestRematch}
             disabled={m.friendGone || m.rematchWait}
           >
-            {m.friendGone ? 'Friend left' : m.rematchWait ? 'Waiting for your friend...' : mode === 'friend' ? 'Rematch' : 'Play again'}
+            {m.friendGone ? t('match.friendLeft') : m.rematchWait ? t('match.waitingFriend') : mode === 'friend' ? t('match.rematch') : t('match.playAgain')}
           </button>
           <button type="button" className="btn btn-ghost" onClick={onExit}>
-            Back to menu
+            {t('common.backToMenu')}
           </button>
         </div>
       )}

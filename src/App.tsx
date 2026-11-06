@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { LanguageButton } from '@/components/LanguageButton'
+import { useT } from '@/i18n'
 import { ConnectKitButton } from 'connectkit'
 import { Menu } from '@/components/Menu'
 import { MatchScreen } from '@/components/MatchScreen'
@@ -31,7 +33,7 @@ type Screen =
       myTeam: Team
       kits: Record<Team, Jersey>
       link: FriendLink | null
-      rival: string
+      rival: 'bot' | 'friend'
       /** The host's stadium, shown to both players in friend matches. */
       stadium?: StadiumId
     }
@@ -62,6 +64,7 @@ setMuted(isMuted())
 window.addEventListener('pointerdown', unlockAudio, { once: true, capture: true })
 
 export default function App() {
+  const t = useT()
   const [onlineInvite, setOnlineInvite] = useState<Invite | null>(readOnlineInvite)
   const [screen, setScreen] = useState<Screen>(() => (readOnlineInvite() ? { name: 'onlineHome' } : { name: 'menu' }))
   const cosmetics = useCosmetics()
@@ -81,7 +84,7 @@ export default function App() {
       myTeam: 'red',
       kits: { red: jersey, blue: rival },
       link: null,
-      rival: 'Bot',
+      rival: 'bot',
     })
   }
 
@@ -97,7 +100,7 @@ export default function App() {
       myTeam,
       kits: myTeam === 'red' ? { red: jersey, blue: rival } : { red: rival, blue: jersey },
       link,
-      rival: 'Friend',
+      rival: 'friend',
       stadium: role === 'guest' ? hostStadium : undefined,
     })
   }
@@ -147,13 +150,16 @@ export default function App() {
       <div className="relative z-10 mx-auto max-w-5xl px-4 pb-12 pt-4">
         <header className="mb-6 flex items-center justify-between">
           <TestnetBadge />
+          <div className="flex items-center gap-2">
+          <LanguageButton />
           <ConnectKitButton.Custom>
             {({ isConnected, show, truncatedAddress }) => (
               <button type="button" onClick={show} className="btn btn-ghost" style={{ width: 'auto', minHeight: 44 }}>
-                {isConnected ? truncatedAddress : 'Connect wallet'}
+                {isConnected ? truncatedAddress : t('app.connect')}
               </button>
             )}
           </ConnectKitButton.Custom>
+          </div>
         </header>
 
         {screen.name === 'onlineHome' ? (

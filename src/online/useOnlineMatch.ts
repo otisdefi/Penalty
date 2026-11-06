@@ -1,3 +1,4 @@
+import { translate } from '@/i18n'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAccount, usePublicClient, useSendTransaction, useSwitchChain } from 'wagmi'
@@ -223,7 +224,7 @@ export function useOnlineMatch(matchId: bigint) {
   const reveal = useCallback(async () => {
     const move = stored?.moves[String(kickNow)]
     if (!move) {
-      setError('Your move for this kick was not found on this device, so it cannot be revealed. The deadline will settle the match.')
+      setError(translate('online.err.moveMissing'))
       return
     }
     await run('reveal', { fn: 'reveal', args: [matchId, move.dir, move.salt] })

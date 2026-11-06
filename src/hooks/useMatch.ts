@@ -18,6 +18,7 @@ import {
 import type { FriendLink, Msg } from '../game/peer'
 import { loadHabits, saveHabits } from '../game/storage'
 import { playWhistle } from '../lib/whistle'
+import type { MessageKey } from '../i18n'
 
 export type Phase = 'whistle' | 'choosing' | 'waiting' | 'reveal' | 'done' | 'aborted'
 
@@ -43,8 +44,8 @@ export function useMatch({ mode, myTeam, link }: Options) {
   const [secondsLeft, setSecondsLeft] = useState(CHOICE_SECONDS)
   const [myPick, setMyPick] = useState<Dir | null>(null)
   const [anim, setAnim] = useState<Kick | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
-  const [abortReason, setAbortReason] = useState<string | null>(null)
+  const [notice, setNotice] = useState<MessageKey | null>(null)
+  const [abortReason, setAbortReason] = useState<MessageKey | null>(null)
   const [matchId, setMatchId] = useState<`0x${string}`>(randomMatchId)
   const [rematchWait, setRematchWait] = useState(false)
   const [friendGone, setFriendGone] = useState(false)
@@ -105,7 +106,7 @@ export function useMatch({ mode, myTeam, link }: Options) {
   }, [beginWhistle, setPhase])
 
   const abort = useCallback(
-    (reason: string) => {
+    (reason: MessageKey) => {
       if (phaseRef.current === 'done') return
       clearTimers()
       setAbortReason(reason)
@@ -168,7 +169,7 @@ export function useMatch({ mode, myTeam, link }: Options) {
     if (!rev || verifying.current === r) return
     verifying.current = r
     void sha256Hex(commitInput(r, rev.d, rev.n)).then((hash) => {
-      if (hash !== theirCommit) abort('Your friend sent an invalid move, so the match was stopped.')
+      if (hash !== theirCommit) abort('match.abort.invalid')
       else resolve(m.dir, rev.d)
     })
   }, [abort, link, resolve])
@@ -200,7 +201,7 @@ export function useMatch({ mode, myTeam, link }: Options) {
         link.send({ t: 'commit', r: round, h })
         m.sent = true
         later(() => {
-          if (phaseRef.current === 'waiting') abort('Your friend stopped responding.')
+          if (phaseRef.current === 'waiting') abort('match.abort.silent')
         }, OPPONENT_TIMEOUT_MS)
         tryAdvance()
       })
@@ -265,7 +266,7 @@ export function useMatch({ mode, myTeam, link }: Options) {
       onMessage: handleMessage,
       onClose: () => {
         if (phaseRef.current === 'done') setFriendGone(true)
-        else abort('Your friend left the match.')
+        else abort('match.abort.left')
       },
     })
     return () => {
@@ -285,7 +286,7 @@ export function useMatch({ mode, myTeam, link }: Options) {
         if (left > 0 && left <= 3) sfx.tick()
       }
       if (left <= 0) {
-        setNotice('Time ran out, so a random direction was picked.')
+        setNotice('match.notice.timeout')
         submit(randomDir())
       }
     }, 150)

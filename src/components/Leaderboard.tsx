@@ -2,6 +2,7 @@ import { useAccount, useReadContract } from 'wagmi'
 import { Flame, Trophy } from 'lucide-react'
 import { LEADERBOARD_ADDRESS, LEADERBOARD_CHAIN_ID, leaderboardAbi } from '@/contract'
 import { shortAddress } from '@/lib/errors'
+import { useI18n } from '@/i18n'
 
 const ZERO = '0x0000000000000000000000000000000000000000'
 
@@ -17,6 +18,7 @@ function Stat({ label, value }: { label: string; value: number | string }) {
 }
 
 function MyRecord() {
+  const { t, n } = useI18n()
   const { address } = useAccount()
   const { data, isLoading } = useReadContract({
     address: LEADERBOARD_ADDRESS,
@@ -29,23 +31,24 @@ function MyRecord() {
   if (!address) {
     return (
       <p className="rounded-2xl px-4 py-3 text-center text-sm" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--muted)' }}>
-        Connect a wallet to see your saved record.
+        {t('lb.connect')}
       </p>
     )
   }
   const [wins, losses, streak, best] = data ?? [0, 0, 0, 0]
-  const v = (n: number) => (isLoading ? '-' : n)
+  const v = (x: number) => (isLoading ? '-' : n(x))
   return (
     <div className="grid grid-cols-4 gap-2" aria-busy={isLoading}>
-      <Stat label="Wins" value={v(wins)} />
-      <Stat label="Losses" value={v(losses)} />
-      <Stat label="Streak" value={v(streak)} />
-      <Stat label="Best" value={v(best)} />
+      <Stat label={t('lb.wins')} value={v(wins)} />
+      <Stat label={t('lb.losses')} value={v(losses)} />
+      <Stat label={t('lb.streak')} value={v(streak)} />
+      <Stat label={t('lb.best')} value={v(best)} />
     </div>
   )
 }
 
 export function Leaderboard() {
+  const { t, n } = useI18n()
   const { address } = useAccount()
   const { data, isLoading, isError, refetch } = useReadContract({
     address: LEADERBOARD_ADDRESS,
@@ -66,10 +69,10 @@ export function Leaderboard() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Trophy size={18} style={{ color: 'var(--lime)' }} />
-          <h2 className="display text-2xl font-extrabold">Top ten</h2>
+          <h2 className="display text-2xl font-extrabold">{t('lb.title')}</h2>
         </div>
         <span className="text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--muted)' }}>
-          Ranked by wins
+          {t('lb.rankedBy')}
         </span>
       </div>
 
@@ -77,22 +80,22 @@ export function Leaderboard() {
 
       {isLoading && (
         <p className="py-6 text-center text-sm" style={{ color: 'var(--muted)' }}>
-          Loading the table...
+          {t('lb.loading')}
         </p>
       )}
 
       {isError && (
         <p className="py-4 text-center text-sm" style={{ color: 'var(--bad)' }}>
-          Could not load the leaderboard.{' '}
+          {t('lb.error')}{' '}
           <button type="button" onClick={() => void refetch()} className="font-bold underline">
-            Retry
+            {t('common.retry')}
           </button>
         </p>
       )}
 
       {!isLoading && !isError && rows.length === 0 && (
         <p className="py-6 text-center text-sm text-pretty" style={{ color: 'var(--muted)' }}>
-          Nobody has saved a win yet. Win a ranked match and save it to take first place.
+          {t('lb.empty')}
         </p>
       )}
 
@@ -110,28 +113,28 @@ export function Leaderboard() {
                 }}
               >
                 <span className="display w-6 text-center text-xl font-extrabold tabular-nums" style={{ color: i === 0 ? 'var(--lime)' : 'var(--subtle)' }}>
-                  {i + 1}
+                  {n(i + 1)}
                 </span>
                 <span className="mono flex-1 truncate text-xs">
                   {shortAddress(r.player)}
                   {me && (
                     <span className="ml-2 font-sans text-[11px] font-bold" style={{ color: 'var(--lime)' }}>
-                      YOU
+                      {t('you')}
                     </span>
                   )}
                 </span>
-                <span className="flex items-center gap-1 text-xs tabular-nums" style={{ color: 'var(--muted)' }} title="Current streak">
+                <span className="flex items-center gap-1 text-xs tabular-nums" style={{ color: 'var(--muted)' }} title={t('lb.currentStreak')}>
                   <Flame size={13} />
-                  {r.streak}
+                  {n(r.streak)}
                 </span>
-                <span className="display w-12 text-right text-2xl font-extrabold tabular-nums">{r.wins}</span>
+                <span className="display w-12 text-right text-2xl font-extrabold tabular-nums">{n(r.wins)}</span>
               </li>
             )
           })}
         </ol>
       )}
       <p className="text-xs text-pretty" style={{ color: 'var(--subtle)' }}>
-        Each wallet reports its own ranked results on Arc Testnet, so the table is for bragging rights, not prizes.
+        {t('lb.note')}
       </p>
     </section>
   )

@@ -11,6 +11,7 @@ import { STATUS, parseMatch } from './helpers'
 import { useOnlineEntry } from './useOnlineEntry'
 import { requireChain } from '@/onchain-facts'
 import { unlockAudioTap } from './audioTap'
+import { useI18n } from '@/i18n'
 
 export interface Invite {
   id: bigint
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function OnlineHome({ invite, onEnter, onBack }: Props) {
+  const { t, n } = useI18n()
   const { address, isConnected } = useAccount()
   const publicClient = usePublicClient({ chainId: ONLINE_CHAIN_ID })
   const { busy, error, create, join, quick, quoteFunding } = useOnlineEntry()
@@ -67,7 +69,7 @@ export function OnlineHome({ invite, onEnter, onBack }: Props) {
     if (id !== null) onEnter(id)
   }
 
-  const fundingText = funding.data ? `about ${Number(formatUnits(funding.data, decimals)).toFixed(2)} USDC` : 'a small amount of USDC'
+  const fundingText = funding.data ? t('online.fundAbout', { amount: n(Number(formatUnits(funding.data, decimals)), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }) : t('online.fundSmall')
   const working = busy !== null
   const roomOpen = room.data?.status === STATUS.Open && !room.data.ranked
   const resumable = resume.data && (resume.data.status === STATUS.Open || resume.data.status === STATUS.Active)
@@ -75,31 +77,31 @@ export function OnlineHome({ invite, onEnter, onBack }: Props) {
   return (
     <section className="mx-auto w-full max-w-md space-y-4">
       <button type="button" onClick={onBack} className="flex min-h-[44px] items-center gap-1.5 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-        <ArrowLeft size={16} /> Menu
+        <ArrowLeft size={16} /> {t('online.menu')}
       </button>
       <div className="space-y-1">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--lime)' }}>
-          Two wallets, onchain
+          {t('online.kicker')}
         </p>
-        <h1 className="display text-5xl font-extrabold leading-[0.9]">Online match</h1>
+        <h1 className="display text-5xl font-extrabold leading-[0.9] text-balance">{t('online.title')}</h1>
         <p className="text-sm text-pretty" style={{ color: 'var(--muted)' }}>
-          Every kick is a hidden, committed move that both players reveal, so neither side can cheat. {STEP_TIMEOUT_S} seconds per step; a player who stalls forfeits.
+          {t('online.intro', { s: n(STEP_TIMEOUT_S) })}
         </p>
       </div>
 
       {!MATCH_ADDRESS && (
         <div className="panel p-4 text-sm" style={{ color: 'var(--bad)' }}>
-          Online play is not configured. Set VITE_MATCH_ADDRESS to the PenaltyMatch contract address.
+          {t('online.notConfigured')}
         </div>
       )}
 
       {MATCH_ADDRESS && !isConnected && (
         <div className="panel space-y-3 p-4">
-          <p className="text-sm">Connect a wallet with some Arc Testnet USDC to play. Gas is paid in USDC.</p>
+          <p className="text-sm">{t('online.connectHint')}</p>
           <ConnectKitButton.Custom>
             {({ show }) => (
               <button type="button" onClick={show} className="btn btn-primary">
-                Connect wallet
+                {t('app.connect')}
               </button>
             )}
           </ConnectKitButton.Custom>
@@ -111,21 +113,21 @@ export function OnlineHome({ invite, onEnter, onBack }: Props) {
           {resumable && resume.data && (
             <div className="panel space-y-2 p-4" style={{ borderColor: 'rgba(198,255,61,0.4)' }}>
               <p className="text-sm font-semibold">
-                You have {resume.data.status === STATUS.Open ? 'an open room' : 'a match in progress'} (#{resume.data.id.toString()}).
+                {resume.data.status === STATUS.Open ? t('online.resumeOpen', { id: resume.data.id.toString() }) : t('online.resumeActive', { id: resume.data.id.toString() })}
               </p>
               <button type="button" className="btn btn-primary" onClick={() => onEnter(resume.data!.id)}>
-                <Play size={16} /> Resume match
+                <Play size={16} /> {t('online.resume')}
               </button>
             </div>
           )}
 
           {invite && (
             <div className="panel space-y-2 p-4">
-              <p className="text-sm font-semibold">Your friend invited you to match #{invite.id.toString()}</p>
-              {room.isLoading && <p className="text-xs" style={{ color: 'var(--muted)' }}>Checking the room...</p>}
+              <p className="text-sm font-semibold">{t('online.invited', { id: invite.id.toString() })}</p>
+              {room.isLoading && <p className="text-xs" style={{ color: 'var(--muted)' }}>{t('online.checking')}</p>}
               {room.data && !roomOpen && (
                 <p className="text-xs" style={{ color: 'var(--bad)' }}>
-                  This room is no longer open{room.data.status === STATUS.Active ? ' (a match is already being played)' : ''}.
+                  {room.data.status === STATUS.Active ? t('online.roomBusy') : t('online.roomClosed')}
                 </p>
               )}
               <button
@@ -135,7 +137,7 @@ export function OnlineHome({ invite, onEnter, onBack }: Props) {
                 onClick={() => void go(() => join(invite.id, invite.code, useKey))}
               >
                 {busy === 'join' ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />}
-                {busy === 'join' ? 'Joining...' : 'Join this match'}
+                {busy === 'join' ? t('online.joining') : t('online.joinThis')}
               </button>
             </div>
           )}
@@ -156,12 +158,10 @@ export function OnlineHome({ invite, onEnter, onBack }: Props) {
               </span>
               <span className="space-y-1">
                 <span className="flex items-center gap-1.5 text-sm font-bold">
-                  <KeyRound size={14} /> Sign once with a helper key
+                  <KeyRound size={14} /> {t('online.helperKey')}
                 </span>
                 <span className="block text-xs text-pretty" style={{ color: 'var(--muted)' }}>
-                  {useKey
-                    ? `Your wallet sends ${fundingText} to a one-time key stored in this browser. It signs your moves automatically, and you can return the leftover after the match.`
-                    : 'Your wallet will ask you to confirm every commit and reveal (two prompts per kick).'}
+                  {useKey ? t('online.helperOn', { amount: fundingText }) : t('online.helperOff')}
                 </span>
               </span>
             </button>
@@ -170,14 +170,14 @@ export function OnlineHome({ invite, onEnter, onBack }: Props) {
           <div className="space-y-2">
             <button type="button" className="btn btn-primary" disabled={working || !address} onClick={() => void go(() => quick(useKey))}>
               {busy === 'quick' ? <Loader2 size={16} className="animate-spin" /> : <Swords size={16} />}
-              {busy === 'quick' ? 'Entering the queue...' : 'Quick match (ranked)'}
+              {busy === 'quick' ? t('online.entering') : t('online.quick')}
             </button>
             <button type="button" className="btn btn-ghost" disabled={working || !address} onClick={() => void go(() => create(useKey))}>
               {busy === 'create' ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />}
-              {busy === 'create' ? 'Creating room...' : 'Create a private room'}
+              {busy === 'create' ? t('online.creating') : t('online.create')}
             </button>
             <p className="text-center text-xs text-pretty" style={{ color: 'var(--subtle)' }}>
-              Quick matches are ranked and update the verified leaderboard. Private rooms are unranked and use a link only your friend has.
+              {t('online.footnote')}
             </p>
           </div>
 
