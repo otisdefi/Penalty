@@ -1,11 +1,11 @@
 import { parseAbi } from 'viem'
 import { arcTestnet } from 'viem/chains'
+import { DEPLOYED, resolveAddress } from './deployments'
 
 export const LEADERBOARD_CHAIN_ID = arcTestnet.id
 
-const rawAddress = import.meta.env.VITE_LEADERBOARD_ADDRESS as string | undefined
-
-export const LEADERBOARD_ADDRESS = (rawAddress ?? '0x0000000000000000000000000000000000000000') as `0x${string}`
+/** VITE_LEADERBOARD_ADDRESS when set and valid, otherwise the deployed Arc Testnet leaderboard. */
+export const LEADERBOARD_ADDRESS = resolveAddress(import.meta.env.VITE_LEADERBOARD_ADDRESS as string | undefined, DEPLOYED.leaderboard)
 
 export const leaderboardAbi = parseAbi([
   'function recordMatch(bool won)',
