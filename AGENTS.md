@@ -85,3 +85,9 @@ bun run dev
 - `supabase/schema.sql` is the source of truth for the database rules (RLS, chat triggers, reports, recovery hash, owner tools); `supabase/functions/reset-password/` is the Edge Function; `supabase/README.md` lists the dashboard steps. Keep the client rules in `rules.ts` and the SQL in sync.
 - No secret in the code: only `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and `VITE_TURNSTILE_SITE_KEY` (all public). The signed-in username replaces the jersey name everywhere (`useCosmetics`).
 
+## Profiles and challenges
+
+- SQL: `supabase/profiles_challenges.sql` (run after `schema.sql`). Every rule (filters, rate limits, cooldown, blocks, availability) lives in the database functions; the app only explains the outcome.
+- App: `src/social/` (`api.ts` database calls, `challenges.ts` engine with Realtime plus polling fallback, `ProfileCard.tsx`, `MyProfile.tsx`, `ChallengeHost.tsx` notifications, `blocks.ts`, `nav.ts` bridge to App).
+- Private two-wallet rooms are unranked in the contract, so the online challenge mode is called "Online match (two wallets)", not ranked.
+

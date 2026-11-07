@@ -43,6 +43,10 @@ Both players choose their own shirt (colour, pattern, second colour, number) and
 
 Players can sign up with a username and password only (no email, no real name) to use the lobby chat and the small chat in friend rooms and online matches. Guests can play everything and read the lobby chat. Messages are plain text, up to 200 characters, with a rate limit, link, email and phone blocking and a profanity filter. Players can report and mute others, and the owner can hide messages and ban users. A one-time recovery code resets a lost password. See `supabase/README.md` for the setup.
 
+### Profiles and challenges
+
+Signed-in players can edit a public profile (shirt, name tag, short bio) and challenge each other to a friendly room or an online two-wallet match. Challenges expire after 2 minutes and are limited in the database. Challenges are just for fun: be kind, no harassment. Setup steps are in `supabase/README.md`.
+
 ### Languages
 
 English (default), Türkçe, Español, Português and Русский. The game uses the browser language on the first visit and remembers the choice made with the globe button. To add a language, copy `src/i18n/locales/es.ts` to a new file (for example `de.ts`), change the `code`, `name` and texts. It is picked up automatically, and any missing text falls back to English.

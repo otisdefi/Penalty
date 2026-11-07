@@ -210,7 +210,7 @@ export async function newRecoveryCode(): Promise<Result<{ recoveryCode: string }
 export async function resetPassword(username: string, code: string, newPassword: string, captchaToken?: string): Promise<Result<{ recoveryCode: string }>> {
   try {
     const sb = await getSupabase()
-    const { data, error } = await sb.functions.invoke('reset-password', { body: { username, code, newPassword, captchaToken } })
+    const { data, error } = (await sb.functions.invoke('reset-password', { body: { username, code, newPassword, captchaToken } })) as { data: unknown; error: unknown }
     if (error) {
       let reason = ''
       try {
@@ -247,7 +247,7 @@ export async function deleteAccount(): Promise<Result> {
 export async function usernameAvailable(name: string): Promise<boolean | null> {
   try {
     const sb = await getSupabase()
-    const { data, error } = await sb.rpc('username_available', { p_name: name })
+    const { data, error } = (await sb.rpc('username_available', { p_name: name })) as { data: unknown; error: unknown }
     return error ? null : data === true
   } catch {
     return null

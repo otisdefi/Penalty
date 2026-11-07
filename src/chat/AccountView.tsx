@@ -4,6 +4,7 @@ import { useI18n, type MessageKey } from '@/i18n'
 import { changePassword, deleteAccount, newRecoveryCode, signOut, useAuth } from './account'
 import { ErrorLine, PasswordField, useCaptcha } from './AuthParts'
 import { PASSWORD_MIN } from './config'
+import { openMyProfile } from '../social/nav'
 
 /** Signed-in view: change password, new recovery code, sign out and delete the account. */
 export function AccountView({ onNewCode, onClose }: { onNewCode: (code: string) => void; onClose: () => void }) {
@@ -61,6 +62,10 @@ export function AccountView({ onNewCode, onClose }: { onNewCode: (code: string) 
           {t('auth.account.publicName')}
         </p>
       </div>
+
+      <button type="button" className="btn btn-primary" style={{ minHeight: 44 }} onClick={() => { onClose(); openMyProfile() }}>
+        {t('social.me.openProfile')}
+      </button>
 
       <form onSubmit={(e) => void submitPassword(e)} className="space-y-3">
         <h3 className="display text-lg font-extrabold">{t('auth.account.changePassword')}</h3>

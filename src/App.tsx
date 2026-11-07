@@ -1,9 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { LanguageButton } from '@/components/LanguageButton'
 import { AccountChip } from '@/chat/AccountChip'
 import { AuthDialog } from '@/chat/AuthDialog'
 import { ChatPanel } from '@/chat/ChatPanel'
 import { startAuth } from '@/chat/account'
+import { ChallengeHost } from '@/social/ChallengeHost'
+import { MyProfile } from '@/social/MyProfile'
+import { ProfileCardHost } from '@/social/ProfileCard'
+import { appBridge, onSocialEvent } from '@/social/nav'
+import { cancelOutgoing, sendChallenge } from '@/social/challenges'
+import { loadStored } from '@/online/storage'
 import { useT } from '@/i18n'
 import { displayName } from '@/cosmetics/identity'
 import { resolveKits } from '@/cosmetics/kits'
@@ -29,8 +35,9 @@ type Screen =
   | { name: 'menu' }
   | { name: 'onlineHome' }
   | { name: 'customize' }
+  | { name: 'profile' }
   | { name: 'online'; id: bigint }
-  | { name: 'lobby'; role: 'host' | 'guest'; room: string | null }
+  | { name: 'lobby'; role: 'host' | 'guest'; room: string | null; challengeTo?: string }
   | {
       name: 'match'
       id: number
@@ -84,6 +91,8 @@ export default function App() {
     <>
       <AppScreens />
       <AuthDialog />
+      <ProfileCardHost />
+      <ChallengeHost />
     </>
   )
 }
@@ -96,6 +105,41 @@ function AppScreens() {
   const jersey = cosmetics.jersey
   const [invite, setInvite] = useState<string | null>(readInvite)
   const [counter, setCounter] = useState(0)
+  const [challengeTo, setChallengeTo] = useState<string | null>(null)
+
+  // Tell the challenge notifications whether I am in a match (new invites then hear "busy").
+  const busy = screen.name === 'match' || screen.name === 'online'
+  useEffect(() => {
+    appBridge.busy = busy
+  }, [busy])
+
+  // Accepting a challenge opens the room for me.
+  useEffect(() => {
+    appBridge.onAccepted = (c) => {
+      if (c.mode === 'friendly' && isRoomId(c.roomCode)) {
+        setScreen({ name: 'lobby', role: 'guest', room: c.roomCode })
+      } else if (c.mode === 'online' && c.matchId !== null && isBytes32(c.roomCode)) {
+        setOnlineInvite({ id: c.matchId, code: c.roomCode })
+        setScreen({ name: 'onlineHome' })
+      }
+    }
+  })
+
+  // Requests from the profile card and the account dialog.
+  useEffect(
+    () =>
+      onSocialEvent((e) => {
+        if (e.type === 'openMyProfile') {
+          setScreen({ name: 'profile' })
+        } else if (e.mode === 'friendly') {
+          setScreen({ name: 'lobby', role: 'host', room: null, challengeTo: e.username })
+        } else {
+          setChallengeTo(e.username)
+          setScreen({ name: 'onlineHome' })
+        }
+      }),
+    [],
+  )
 
   const startBot = (ranked: boolean) => {
     const rival = distinct(jersey, { color: '#3a86ff', number: 7 })
@@ -149,7 +193,12 @@ function AppScreens() {
   const leaveOnline = () => {
     if (onlineInvite && window.location.search) window.history.replaceState(null, '', window.location.pathname)
     setOnlineInvite(null)
+    setChallengeTo(null)
     setScreen({ name: 'menu' })
+  }
+
+  if (screen.name === 'profile') {
+    return <MyProfile onBack={() => setScreen({ name: 'menu' })} />
   }
 
   if (screen.name === 'customize') {
@@ -205,6 +254,13 @@ function AppScreens() {
               setScreen({ name: 'online', id })
             }}
             onBack={leaveOnline}
+            challengeTo={challengeTo}
+            onChallengeRoom={async (id) => {
+              // The room is made; now send the invite with its code.
+              const code = loadStored(id)?.roomCode
+              if (challengeTo && code) await sendChallenge(challengeTo, 'online', code, id)
+              setChallengeTo(null)
+            }}
           />
         ) : screen.name === 'lobby' ? (
           <FriendLobby
@@ -212,12 +268,14 @@ function AppScreens() {
             role={screen.role}
             room={screen.room}
             jersey={jersey}
+            onRoomReady={screen.challengeTo ? (id) => void sendChallenge(screen.challengeTo!, 'friendly', id) : undefined}
             onReady={(link, theirs, hostStadium, roomId) => {
               if (screen.role === 'guest') clearInvite()
               startFriend(screen.role, link, theirs, hostStadium, roomId)
             }}
             onCancel={() => {
               if (screen.role === 'guest') clearInvite()
+              if (screen.challengeTo) void cancelOutgoing()
               setScreen({ name: 'menu' })
             }}
           />

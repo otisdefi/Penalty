@@ -3,7 +3,9 @@ import { Flag, MessageCircle, MoreHorizontal, Send, VolumeX } from 'lucide-react
 import { useI18n } from '@/i18n'
 import { openAuthDialog, useAuth } from './account'
 import { CHAT_CONFIGURED, MESSAGE_MAX } from './config'
-import { muteUser, unmuteAll, useMuted } from './mute'
+import { unmuteAll, useMuted } from './mute'
+import { blockPlayer, useBlocks } from '../social/blocks'
+import { openProfileCard } from '../social/profileCard'
 import { useChat, type ChatMessage } from './useChat'
 
 interface Props {
@@ -14,16 +16,22 @@ interface Props {
   height?: number
 }
 
-function Row({ m, mine, reported, canAct, onReport, onMute }: { m: ChatMessage; mine: boolean; reported: boolean; canAct: boolean; onReport: () => void; onMute: () => void }) {
+function Row({ m, mine, reported, canAct, onReport, onMute, onOpen }: { m: ChatMessage; mine: boolean; reported: boolean; canAct: boolean; onReport: () => void; onMute: () => void; onOpen: () => void }) {
   const { t, lang } = useI18n()
   const [open, setOpen] = useState(false)
   const time = useMemo(() => new Intl.DateTimeFormat(lang, { hour: '2-digit', minute: '2-digit' }).format(m.at), [lang, m.at])
   return (
     <li className="group rounded-xl px-2 py-1.5" style={{ background: mine ? 'rgba(198,255,61,0.08)' : 'transparent' }}>
       <div className="flex items-baseline gap-2">
-        <span className="max-w-[60%] truncate text-[12px] font-bold" style={{ color: mine ? 'var(--lime)' : 'var(--ink)' }}>
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={t('social.card.open', { name: m.username })}
+          className="max-w-[60%] truncate text-left text-[12px] font-bold underline-offset-2 hover:underline"
+          style={{ color: mine ? 'var(--lime)' : 'var(--ink)' }}
+        >
           {m.username}
-        </span>
+        </button>
         <time className="text-[10px] tabular-nums" style={{ color: 'var(--subtle)' }} dateTime={new Date(m.at).toISOString()}>
           {time}
         </time>
@@ -75,11 +83,12 @@ export function ChatPanel({ channel, title, height = 240 }: Props) {
   const auth = useAuth()
   const chat = useChat(channel)
   const muted = useMuted()
+  const blocked = useBlocks()
   const [text, setText] = useState('')
   const list = useRef<HTMLUListElement>(null)
   const stick = useRef(true)
 
-  const visible = useMemo(() => chat.messages.filter((m) => !muted.includes(m.userId)), [chat.messages, muted])
+  const visible = useMemo(() => chat.messages.filter((m) => !muted.includes(m.userId) && !blocked.some((b) => b.id === m.userId)), [chat.messages, muted, blocked])
 
   // Keep the newest message in view, unless the player scrolled up to read older ones.
   useEffect(() => {
@@ -162,7 +171,8 @@ export function ChatPanel({ channel, title, height = 240 }: Props) {
             reported={chat.reported.includes(m.id)}
             canAct={signedIn}
             onReport={() => (signedIn ? void chat.report(m.id) : openAuthDialog('signin'))}
-            onMute={() => muteUser(m.userId)}
+            onMute={() => void blockPlayer(m.username, m.userId, 'mute')}
+            onOpen={() => openProfileCard(m.username, m.userId)}
           />
         ))}
       </ul>

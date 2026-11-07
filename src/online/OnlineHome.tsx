@@ -27,9 +27,12 @@ interface Props {
   invite: Invite | null
   onEnter: (id: bigint) => void
   onBack: () => void
+  /** A player to challenge: creating the room then also sends them the invite. */
+  challengeTo?: string | null
+  onChallengeRoom?: (id: bigint) => Promise<void>
 }
 
-export function OnlineHome({ invite, onEnter, onBack }: Props) {
+export function OnlineHome({ invite, onEnter, onBack, challengeTo = null, onChallengeRoom }: Props) {
   const { t, n } = useI18n()
   const { address, isConnected } = useAccount()
   const publicClient = usePublicClient({ chainId: ONLINE_CHAIN_ID })
@@ -71,10 +74,12 @@ export function OnlineHome({ invite, onEnter, onBack }: Props) {
     },
   })
 
-  const go = async (fn: () => Promise<bigint | null>) => {
+  const go = async (fn: () => Promise<bigint | null>, sendInvite = false) => {
     unlockAudioTap()
     const id = await fn()
-    if (id !== null) onEnter(id)
+    if (id === null) return
+    if (sendInvite && onChallengeRoom) await onChallengeRoom(id)
+    onEnter(id)
   }
 
   const fundingText = funding.data ? t('online.fundAbout', { amount: n(Number(formatUnits(funding.data, decimals)), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }) : t('online.fundSmall')
@@ -208,9 +213,9 @@ export function OnlineHome({ invite, onEnter, onBack }: Props) {
               {busy === 'quick' ? <Loader2 size={16} className="animate-spin" /> : <Swords size={16} />}
               {busy === 'quick' ? t('online.entering') : t('online.quick')}
             </button>
-            <button type="button" className="btn btn-ghost" disabled={working || !address} onClick={() => void go(() => create(useKey))}>
+            <button type="button" className="btn btn-ghost" disabled={working || !address} onClick={() => void go(() => create(useKey), challengeTo !== null)}>
               {busy === 'create' ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />}
-              {busy === 'create' ? t('online.creating') : t('online.create')}
+              {busy === 'create' ? t('online.creating') : challengeTo ? t('social.online.sendTo', { name: challengeTo }) : t('online.create')}
             </button>
             <p className="text-center text-xs text-pretty" style={{ color: 'var(--subtle)' }}>
               {t('online.footnote')}

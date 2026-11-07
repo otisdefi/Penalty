@@ -23,6 +23,24 @@ It creates the profiles, messages, reports and recovery tables with Row Level Se
 (200 characters, 1 message per 2 seconds, 20 per minute, no links, emails or phone numbers, profanity filter),
 the "Report" auto-hide (5 different reporters), and the owner tools listed in step 7.
 
+## 2b. Add profiles, challenges, blocks and player reports
+
+**SQL Editor > New query**: paste the whole of `supabase/profiles_challenges.sql` and press **Run**. Run it **after** step 2
+(it stops with a clear message if `schema.sql` has not been run). It is safe to run again; if you ever re-run `schema.sql`,
+run this file again after it. It adds:
+
+- profile fields (jersey, name tag, 60-character bio, "open to challenges", optional shared stats) edited with `update_my_profile`
+- `player_blocks` (mute / block, enforced in the database: hides their messages and stops their challenges)
+- `challenges` (invites that expire after 2 minutes) with the abuse rules inside `send_challenge`: one pending challenge per
+  sender, 5 per minute and 30 per day, none to yourself, to a banned, muted or blocking player, or to a player who is not open
+  to challenges, and a 60 second cooldown after a decline
+- `player_reports` (5 different reporters hide a profile's bio and name tag) and the owner tools `admin_player_reports`,
+  `admin_hide_profile`, `admin_unhide_profile`, `admin_clear_profile`
+- Realtime for `challenges` (the app falls back to polling every few seconds if Realtime is not connected)
+
+No email, real name, age, location or wallet address is stored. Challenges are for friendly or online (two-wallet) private
+matches; they do not change the verified leaderboard.
+
 ## 3. Turn off email confirmation (required)
 
 **Authentication > Sign In / Providers > Email**:
@@ -95,6 +113,10 @@ domain you do not use for real mail, re-run the SQL, and redeploy.
 | `auth.users` (Supabase) | the placeholder identity and the password **hash** |
 | `public.profiles` | username, ban flag |
 | `public.messages` | channel, username, text, time |
+| `public.profiles` (extra columns) | jersey, name tag, bio, challenge and stats switches, last-active time (only used for the "available" hint) |
+| `public.challenges` | who invited whom, mode, room code, status, expiry (kept for a short time) |
+| `public.player_blocks` | who muted or blocked whom |
+| `public.player_reports` | who reported which player |
 | `public.reports` | who reported which message |
 | `private.recovery` | a SHA-256 hash of the recovery code (the code itself is never stored) |
 

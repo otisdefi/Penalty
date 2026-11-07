@@ -20,6 +20,8 @@ interface Props {
   jersey: Jersey
   onReady: (link: FriendLink, theirs: Jersey, hostStadium: StadiumId | undefined, roomId: string | undefined) => void
   onCancel: () => void
+  /** Called once the host's room code exists (used to send it in a challenge). */
+  onRoomReady?: (roomId: string) => void
 }
 
 const formatClock = (ms: number, pad: (v: number) => string): string => {
@@ -72,7 +74,7 @@ function useWakeLock(active: boolean): void {
   }, [active])
 }
 
-export function FriendLobby({ role, room, jersey, onReady, onCancel }: Props) {
+export function FriendLobby({ role, room, jersey, onReady, onCancel, onRoomReady }: Props) {
   const { t, n } = useI18n()
   const [runKey, setRunKey] = useState(0)
   const [roomId, setRoomId] = useState<string | null>(room)
@@ -88,6 +90,7 @@ export function FriendLobby({ role, room, jersey, onReady, onCancel }: Props) {
   // What the other player sees of you: your shirt plus your name (or "Player 1234" when you have none).
   const sendJersey = useMemo(() => ({ ...jersey, tag: displayName(jersey.tag) }), [jersey])
   const readyRef = useRef(onReady)
+  const roomReadyRef = useRef(onRoomReady)
   const roomIdRef = useRef<string | null>(room)
   const connRef = useRef<FriendLink | null>(null)
   const theirsRef = useRef<Jersey | null>(null)
@@ -104,6 +107,7 @@ export function FriendLobby({ role, room, jersey, onReady, onCancel }: Props) {
 
   useEffect(() => {
     readyRef.current = onReady
+    roomReadyRef.current = onRoomReady
     roomIdRef.current = roomId
   })
 
@@ -170,6 +174,7 @@ export function FriendLobby({ role, room, jersey, onReady, onCancel }: Props) {
           if (!alive) return
           setRoomId(id)
           setExpiresAt(until)
+          roomReadyRef.current?.(id)
         },
         onStatus: (s) => alive && setHostStatus(s),
         onNotice: (message) => alive && setNotice(message),
