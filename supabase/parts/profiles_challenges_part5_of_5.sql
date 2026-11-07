@@ -124,6 +124,6 @@ revoke all on public.admin_player_reports from public, anon, authenticated;
 grant select on public.admin_player_reports to service_role;
 
 -- Optional clean-up of old challenges (Database > Extensions > enable pg_cron, then):
---   select cron.schedule('trim-challenges', '15 4 * * *', $$delete from public.challenges where created_at < now() - interval '7 days'$$);
+--   select cron.schedule('trim-challenges', '15 4 * * *', 'delete from public.challenges where created_at < now() - interval ''7 days''');
 
 -- END OF PART 5 OF 5
