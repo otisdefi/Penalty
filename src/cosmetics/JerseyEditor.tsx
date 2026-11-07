@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
 import { useI18n, type MessageKey } from '@/i18n'
+import { useAccountName } from '../chat/account'
 import { JerseyDot } from './art'
 import { COLORS, PATTERNS } from './catalog'
 import { NAME_MAX, tagMessage, tagProblem, trimTag } from './nameFilter'
@@ -15,6 +16,7 @@ import type { Jersey } from './types'
 export function JerseyEditor({ disabled = false }: { disabled?: boolean }) {
   const { t: tr, n } = useI18n()
   const { jersey } = useCosmetics()
+  const account = useAccountName()
   const [tagDraft, setTagDraft] = useState(jersey.tag ?? '')
   const [tagError, setTagError] = useState<MessageKey | null>(null)
 
@@ -95,6 +97,11 @@ export function JerseyEditor({ disabled = false }: { disabled?: boolean }) {
             </div>
             <div>
               <SectionTitle>{tr('cz.tag', { max: n(NAME_MAX) })}</SectionTitle>
+              {account ? (
+                <p className="rounded-xl border px-3 py-2.5 text-sm font-semibold text-pretty" style={{ borderColor: 'var(--line)' }}>
+                  {tr('cz.accountName', { name: account })}
+                </p>
+              ) : (
               <input
                 type="text"
                 maxLength={NAME_MAX}
@@ -109,6 +116,7 @@ export function JerseyEditor({ disabled = false }: { disabled?: boolean }) {
                 className="h-11 w-full rounded-xl border bg-transparent px-3 text-base font-semibold"
                 style={{ borderColor: tagError ? 'var(--bad)' : 'var(--line)' }}
               />
+              )}
             </div>
           </div>
           {tagError && (

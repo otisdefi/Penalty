@@ -39,6 +39,10 @@ Other commands:
 
 Both players choose their own shirt (colour, pattern, second colour, number) and a player name of up to 12 characters, then press Ready. In a friend room the match starts when both are ready. In an onchain match, creating, joining or queueing counts as Ready, because the move clock runs onchain. If both pick the same colour, the guest is shown in a contrasting one. The host's stadium is shown to both players; each player keeps their own ball.
 
+### Accounts and chat
+
+Players can sign up with a username and password only (no email, no real name) to use the lobby chat and the small chat in friend rooms and online matches. Guests can play everything and read the lobby chat. Messages are plain text, up to 200 characters, with a rate limit, link, email and phone blocking and a profanity filter. Players can report and mute others, and the owner can hide messages and ban users. A one-time recovery code resets a lost password. See `supabase/README.md` for the setup.
+
 ### Languages
 
 English (default), Türkçe, Español, Português and Русский. The game uses the browser language on the first visit and remembers the choice made with the globe button. To add a language, copy `src/i18n/locales/es.ts` to a new file (for example `de.ts`), change the `code`, `name` and texts. It is picked up automatically, and any missing text falls back to English.
@@ -47,6 +51,8 @@ English (default), Türkçe, Español, Português and Русский. The game u
 
 - `VITE_LEADERBOARD_ADDRESS` (optional): address of the deployed leaderboard contract on Arc Testnet (offline ranked results).
 - `VITE_MATCH_ADDRESS` (optional): address of the deployed online match contract on Arc Testnet.
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (optional): your Supabase project for accounts and chat. Without them the app shows "Chat is not configured". Setup and SQL: `supabase/README.md`.
+- `VITE_TURNSTILE_SITE_KEY` (optional): Cloudflare Turnstile site key for bot protection on sign-up.
 - `VITE_TURN_URLS`, `VITE_TURN_USERNAME`, `VITE_TURN_CREDENTIAL` (optional, set all three): a TURN relay so friend matches also connect on strict mobile or office networks. These are visible in the built app, so use browser-safe, usage-limited credentials.
 - `VITE_PEER_HOST`, `VITE_PEER_PORT`, `VITE_PEER_PATH`, `VITE_PEER_SECURE` (optional): use your own PeerJS matchmaking server instead of the free PeerJS cloud.
 - `RPC_PROXY_BASE_URL`, `RPC_PROXY_TOKEN`, `RPC_PROXY_CHAINS`: optional outside Arc Studio. Provisioned by Arc Studio for RPC access.

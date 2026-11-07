@@ -22,6 +22,7 @@ import { shortAddress } from '@/lib/errors'
 import { textOn, YELLOW } from '@/lib/color'
 import { buildTxExplorerUrl, requireChain } from '@/onchain-facts'
 import { LanguageButton } from '@/components/LanguageButton'
+import { InlineChat } from '@/chat/InlineChat'
 import { displayName } from '@/cosmetics/identity'
 import { colorLabelKey, resolveKits } from '@/cosmetics/kits'
 import { useI18n, type TFunction } from '@/i18n'
@@ -129,6 +130,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
           error={o.error}
           onCancel={() => void o.cancel().then(onExit)}
         />
+        <InlineChat channel={`match:${matchId.toString()}`} title="chat.title.match" />
       </Shell>
     )
   }
@@ -299,6 +301,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
           </button>
         </div>
       )}
+      <InlineChat channel={`match:${matchId.toString()}`} title="chat.title.match" />
     </Shell>
   )
 }

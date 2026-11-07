@@ -12,12 +12,13 @@ import { displayName } from '@/cosmetics/identity'
 import { colorLabelKey, resolveKits } from '@/cosmetics/kits'
 import { useCosmetics } from '@/cosmetics/store'
 import { DEFAULT_LOOK } from '@/cosmetics/types'
+import { InlineChat } from '@/chat/InlineChat'
 
 interface Props {
   role: 'host' | 'guest'
   room: string | null
   jersey: Jersey
-  onReady: (link: FriendLink, theirs: Jersey, hostStadium: StadiumId | undefined) => void
+  onReady: (link: FriendLink, theirs: Jersey, hostStadium: StadiumId | undefined, roomId: string | undefined) => void
   onCancel: () => void
 }
 
@@ -87,6 +88,7 @@ export function FriendLobby({ role, room, jersey, onReady, onCancel }: Props) {
   // What the other player sees of you: your shirt plus your name (or "Player 1234" when you have none).
   const sendJersey = useMemo(() => ({ ...jersey, tag: displayName(jersey.tag) }), [jersey])
   const readyRef = useRef(onReady)
+  const roomIdRef = useRef<string | null>(room)
   const connRef = useRef<FriendLink | null>(null)
   const theirsRef = useRef<Jersey | null>(null)
   const theirStadiumRef = useRef<StadiumId | undefined>(undefined)
@@ -102,6 +104,7 @@ export function FriendLobby({ role, room, jersey, onReady, onCancel }: Props) {
 
   useEffect(() => {
     readyRef.current = onReady
+    roomIdRef.current = roomId
   })
 
   // The match starts only when both players are ready and I have seen the other player's shirt.
@@ -112,7 +115,7 @@ export function FriendLobby({ role, room, jersey, onReady, onCancel }: Props) {
     startedRef.current = true
     l.setHandlers({}) // hold anything that arrives from now on until the match screen takes over
     l.requeue(pendingRef.current)
-    readyRef.current(l, other, theirStadiumRef.current)
+    readyRef.current(l, other, theirStadiumRef.current, roomIdRef.current ?? undefined)
   }
 
   // Share my look when I join and again every time I change it in the lobby.
@@ -356,6 +359,7 @@ export function FriendLobby({ role, room, jersey, onReady, onCancel }: Props) {
             <Check size={18} /> {t('ready.ready')}
           </button>
         )}
+        {roomId && <InlineChat channel={`room:${roomId}`} title="chat.title.room" />}
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
           {t('common.cancel')}
         </button>

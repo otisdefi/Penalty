@@ -48,17 +48,21 @@ const lettersOnly = (s: string) => collapse(fold(s).replace(/[^\p{L}]/gu, ''))
 
 export type TagProblem = 'link' | 'word' | null
 
-/** Returns why a raw name is not allowed, or null when it is fine. */
-export function tagProblem(raw: string): TagProblem {
-  if (LINK_PATTERNS.some((p) => p.test(raw))) return 'link'
+/** True when the text contains a word from the profanity lists (any supported language). */
+export function hasBlockedWord(raw: string): boolean {
   const flat = lettersOnly(raw)
-  if (BLOCKED_ROOTS.some((w) => flat.includes(collapse(fold(w))))) return 'word'
+  if (BLOCKED_ROOTS.some((w) => flat.includes(collapse(fold(w))))) return true
   const tokens = raw
     .split(/[\s._,'!?-]+/u)
     .map((t) => fold(t).replace(/[^\p{L}]/gu, '').replace(/(.)\1{2,}/gu, '$1$1'))
     .filter(Boolean)
-  if (tokens.some((t) => BLOCKED_WORDS.has(t) || BLOCKED_WORDS.has(collapse(t)))) return 'word'
-  return null
+  return tokens.some((t) => BLOCKED_WORDS.has(t) || BLOCKED_WORDS.has(collapse(t)))
+}
+
+/** Returns why a raw name is not allowed, or null when it is fine. */
+export function tagProblem(raw: string): TagProblem {
+  if (LINK_PATTERNS.some((p) => p.test(raw))) return 'link'
+  return hasBlockedWord(raw) ? 'word' : null
 }
 
 /** Strips unsupported characters and enforces the length limit. Does not judge the content. */

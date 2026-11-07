@@ -1,4 +1,5 @@
-import { useSyncExternalStore } from 'react'
+import { useMemo, useSyncExternalStore } from 'react'
+import { useAccountName } from '../chat/account'
 import { isKnownColor } from './catalog'
 import { safeTag } from './nameFilter'
 import { DEFAULT_COSMETICS, type Cosmetics } from './types'
@@ -60,4 +61,9 @@ export function setCosmetics(update: Partial<Cosmetics> | ((c: Cosmetics) => Cos
   listeners.forEach((fn) => fn())
 }
 
-export const useCosmetics = (): Cosmetics => useSyncExternalStore(subscribe, getCosmetics)
+/** Your saved choices. When you are signed in, your username is the public name on your shirt. */
+export function useCosmetics(): Cosmetics {
+  const saved = useSyncExternalStore(subscribe, getCosmetics)
+  const account = useAccountName()
+  return useMemo(() => (account ? { ...saved, jersey: { ...saved.jersey, tag: account } } : saved), [saved, account])
+}

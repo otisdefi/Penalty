@@ -79,3 +79,9 @@ bun run dev
 - Onchain matches share looks over a PeerJS side channel (`src/online/useCosmeticSync.ts`); Ready = create/join/queue, since the 20 second clock is onchain. Looks are validated (known colours and patterns, numbers 1 to 99, names 12 characters max with links and bad words removed) and only ever drawn, never rendered as HTML.
 - `src/cosmetics/kits.ts`: if both shirt colours match, the guest is shown in a contrasting colour. `src/cosmetics/identity.ts`: names default to "Player 1234" (offline and friend) or the short wallet address (onchain).
 
+## Accounts and chat (Supabase)
+
+- `src/chat/`: `config.ts` (env, limits), `client.ts` (Supabase client loaded on demand), `account.ts` (auth store and actions), `rules.ts` (username, password, message and recovery-code rules), `useChat.ts` and `ChatPanel.tsx` (realtime chat), `AuthDialog.tsx`/`AuthParts.tsx`/`AccountView.tsx` (sign up, sign in, reset, account), `Turnstile.tsx`.
+- `supabase/schema.sql` is the source of truth for the database rules (RLS, chat triggers, reports, recovery hash, owner tools); `supabase/functions/reset-password/` is the Edge Function; `supabase/README.md` lists the dashboard steps. Keep the client rules in `rules.ts` and the SQL in sync.
+- No secret in the code: only `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and `VITE_TURNSTILE_SITE_KEY` (all public). The signed-in username replaces the jersey name everywhere (`useCosmetics`).
+

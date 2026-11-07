@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import { LanguageButton } from '@/components/LanguageButton'
+import { AccountChip } from '@/chat/AccountChip'
+import { AuthDialog } from '@/chat/AuthDialog'
+import { ChatPanel } from '@/chat/ChatPanel'
+import { startAuth } from '@/chat/account'
 import { useT } from '@/i18n'
 import { displayName } from '@/cosmetics/identity'
 import { resolveKits } from '@/cosmetics/kits'
@@ -41,6 +45,8 @@ type Screen =
       recolored: boolean
       /** The host's stadium, shown to both players in friend matches. */
       stadium?: StadiumId
+      /** Chat channel of the friend room (friend matches only). */
+      roomId?: string
     }
 
 const BOT_COLORS = ['#3a86ff', '#ffd23f', '#06d6a0', '#ff4d9d']
@@ -70,7 +76,19 @@ clearPending()
 // The first tap anywhere unlocks audio for browsers that block it until a gesture.
 window.addEventListener('pointerdown', unlockAudio, { once: true, capture: true })
 
+// Restore a saved sign-in in the background (does nothing when chat is not configured).
+startAuth()
+
 export default function App() {
+  return (
+    <>
+      <AppScreens />
+      <AuthDialog />
+    </>
+  )
+}
+
+function AppScreens() {
   const t = useT()
   const [onlineInvite, setOnlineInvite] = useState<Invite | null>(readOnlineInvite)
   const [screen, setScreen] = useState<Screen>(() => (readOnlineInvite() ? { name: 'onlineHome' } : { name: 'menu' }))
@@ -96,7 +114,7 @@ export default function App() {
     })
   }
 
-  const startFriend = (role: 'host' | 'guest', link: FriendLink, theirs: Jersey, hostStadium?: StadiumId) => {
+  const startFriend = (role: 'host' | 'guest', link: FriendLink, theirs: Jersey, hostStadium?: StadiumId, roomId?: string) => {
     const mine = { ...jersey, tag: displayName(jersey.tag) }
     const myTeam: Team = role === 'host' ? 'red' : 'blue'
     // The host keeps their colour; if both picked the same one, the guest is shown in a contrasting colour.
@@ -114,6 +132,7 @@ export default function App() {
       names: myTeam === 'red' ? { red: mine.tag, blue: theirName } : { red: theirName, blue: mine.tag },
       recolored,
       stadium: role === 'guest' ? hostStadium : undefined,
+      roomId,
     })
   }
 
@@ -153,6 +172,7 @@ export default function App() {
         names={screen.names}
         recolored={screen.recolored}
         stadium={screen.stadium}
+        roomId={screen.roomId}
         onExit={toMenu}
       />
     )
@@ -165,6 +185,7 @@ export default function App() {
           <TestnetBadge />
           <div className="flex items-center gap-2">
           <LanguageButton />
+          <AccountChip />
           <ConnectKitButton.Custom>
             {({ isConnected, show, truncatedAddress }) => (
               <button type="button" onClick={show} className="btn btn-ghost" style={{ width: 'auto', minHeight: 44 }}>
@@ -191,9 +212,9 @@ export default function App() {
             role={screen.role}
             room={screen.room}
             jersey={jersey}
-            onReady={(link, theirs, hostStadium) => {
+            onReady={(link, theirs, hostStadium, roomId) => {
               if (screen.role === 'guest') clearInvite()
-              startFriend(screen.role, link, theirs, hostStadium)
+              startFriend(screen.role, link, theirs, hostStadium, roomId)
             }}
             onCancel={() => {
               if (screen.role === 'guest') clearInvite()
@@ -215,8 +236,9 @@ export default function App() {
                 onJoinCode={(room) => setScreen({ name: 'lobby', role: 'guest', room })}
               />
             </div>
-            <div className="mx-auto w-full max-w-md lg:mx-0">
+            <div className="mx-auto w-full max-w-md space-y-6 lg:mx-0">
               <Leaderboard />
+              <ChatPanel channel="lobby" title={t('chat.title.lobby')} height={260} />
             </div>
           </div>
         )}
