@@ -38,6 +38,10 @@ run this file again after it. It adds:
   `admin_hide_profile`, `admin_unhide_profile`, `admin_clear_profile`
 - Realtime for `challenges` (the app falls back to polling every few seconds if Realtime is not connected)
 
+If pasting the whole file is cut off on your phone, use the five smaller files in `supabase/parts/` instead
+(`profiles_challenges_part1_of_5.sql` to `..._part5_of_5.sql`). Run them in order 1, 2, 3, 4, 5. Each one ends with a
+`-- END OF PART n OF 5` line so you can check your paste, and refuses to run if an earlier part is missing.
+
 No email, real name, age, location or wallet address is stored. Challenges are for friendly or online (two-wallet) private
 matches; they do not change the verified leaderboard.
 
