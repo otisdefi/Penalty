@@ -1,3 +1,4 @@
+import { Avatar } from '../avatar/Avatar'
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Flag, MessageCircle, MoreHorizontal, Send, VolumeX } from 'lucide-react'
 import { useI18n } from '@/i18n'
@@ -22,7 +23,8 @@ function Row({ m, mine, reported, canAct, onReport, onMute, onOpen }: { m: ChatM
   const time = useMemo(() => new Intl.DateTimeFormat(lang, { hour: '2-digit', minute: '2-digit' }).format(m.at), [lang, m.at])
   return (
     <li className="group rounded-xl px-2 py-1.5" style={{ background: mine ? 'rgba(198,255,61,0.08)' : 'transparent' }}>
-      <div className="flex items-baseline gap-2">
+      <div className="flex items-center gap-2">
+        <Avatar username={m.username} size={22} />
         <button
           type="button"
           onClick={onOpen}

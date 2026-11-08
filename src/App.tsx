@@ -3,7 +3,7 @@ import { LanguageButton } from '@/components/LanguageButton'
 import { AccountChip } from '@/chat/AccountChip'
 import { AuthDialog } from '@/chat/AuthDialog'
 import { ChatPanel } from '@/chat/ChatPanel'
-import { startAuth } from '@/chat/account'
+import { startAuth, useAuth } from '@/chat/account'
 import { ChallengeHost } from '@/social/ChallengeHost'
 import { MyProfile } from '@/social/MyProfile'
 import { ProfileCardHost } from '@/social/ProfileCard'
@@ -36,8 +36,8 @@ type Screen =
   | { name: 'onlineHome' }
   | { name: 'customize' }
   | { name: 'profile' }
-  | { name: 'online'; id: bigint }
-  | { name: 'lobby'; role: 'host' | 'guest'; room: string | null; challengeTo?: string }
+  | { name: 'online'; id: bigint; peer?: string }
+  | { name: 'lobby'; role: 'host' | 'guest'; room: string | null; challengeTo?: string; peer?: string }
   | {
       name: 'match'
       id: number
@@ -54,6 +54,8 @@ type Screen =
       stadium?: StadiumId
       /** Chat channel of the friend room (friend matches only). */
       roomId?: string
+      /** Verified account holders (known from a challenge) per team, shown as round pictures. */
+      avatars?: Partial<Record<Team, string>>
     }
 
 const BOT_COLORS = ['#3a86ff', '#ffd23f', '#06d6a0', '#ff4d9d']
@@ -106,6 +108,10 @@ function AppScreens() {
   const [invite, setInvite] = useState<string | null>(readInvite)
   const [counter, setCounter] = useState(0)
   const [challengeTo, setChallengeTo] = useState<string | null>(null)
+  /** The challenger or challenged player for an online match (verified by the database). */
+  const [onlinePeer, setOnlinePeer] = useState<string | null>(null)
+  const auth = useAuth()
+  const myUsername = auth.status === 'in' ? auth.user?.username : undefined
 
   // Tell the challenge notifications whether I am in a match (new invites then hear "busy").
   const busy = screen.name === 'match' || screen.name === 'online'
@@ -117,9 +123,10 @@ function AppScreens() {
   useEffect(() => {
     appBridge.onAccepted = (c) => {
       if (c.mode === 'friendly' && isRoomId(c.roomCode)) {
-        setScreen({ name: 'lobby', role: 'guest', room: c.roomCode })
+        setScreen({ name: 'lobby', role: 'guest', room: c.roomCode, peer: c.other })
       } else if (c.mode === 'online' && c.matchId !== null && isBytes32(c.roomCode)) {
         setOnlineInvite({ id: c.matchId, code: c.roomCode })
+        setOnlinePeer(c.other)
         setScreen({ name: 'onlineHome' })
       }
     }
@@ -135,6 +142,7 @@ function AppScreens() {
           setScreen({ name: 'lobby', role: 'host', room: null, challengeTo: e.username })
         } else {
           setChallengeTo(e.username)
+          setOnlinePeer(e.username)
           setScreen({ name: 'onlineHome' })
         }
       }),
@@ -158,7 +166,7 @@ function AppScreens() {
     })
   }
 
-  const startFriend = (role: 'host' | 'guest', link: FriendLink, theirs: Jersey, hostStadium?: StadiumId, roomId?: string) => {
+  const startFriend = (role: 'host' | 'guest', link: FriendLink, theirs: Jersey, hostStadium?: StadiumId, roomId?: string, peer?: string) => {
     const mine = { ...jersey, tag: displayName(jersey.tag) }
     const myTeam: Team = role === 'host' ? 'red' : 'blue'
     // The host keeps their colour; if both picked the same one, the guest is shown in a contrasting colour.
@@ -177,6 +185,7 @@ function AppScreens() {
       recolored,
       stadium: role === 'guest' ? hostStadium : undefined,
       roomId,
+      avatars: myUsername || peer ? { [myTeam]: myUsername, [myTeam === 'red' ? 'blue' : 'red']: peer } : undefined,
     })
   }
 
@@ -194,6 +203,7 @@ function AppScreens() {
     if (onlineInvite && window.location.search) window.history.replaceState(null, '', window.location.pathname)
     setOnlineInvite(null)
     setChallengeTo(null)
+    setOnlinePeer(null)
     setScreen({ name: 'menu' })
   }
 
@@ -206,7 +216,7 @@ function AppScreens() {
   }
 
   if (screen.name === 'online') {
-    return <OnlineMatchScreen key={screen.id.toString()} matchId={screen.id} onExit={() => setScreen({ name: 'onlineHome' })} />
+    return <OnlineMatchScreen key={screen.id.toString()} matchId={screen.id} peerUsername={screen.peer} onExit={() => setScreen({ name: 'onlineHome' })} />
   }
 
   if (screen.name === 'match') {
@@ -222,6 +232,7 @@ function AppScreens() {
         recolored={screen.recolored}
         stadium={screen.stadium}
         roomId={screen.roomId}
+        avatars={screen.avatars}
         onExit={toMenu}
       />
     )
@@ -251,7 +262,8 @@ function AppScreens() {
             onEnter={(id) => {
               setOnlineInvite(null)
               if (window.location.search || window.location.hash) window.history.replaceState(null, '', window.location.pathname)
-              setScreen({ name: 'online', id })
+              setScreen({ name: 'online', id, peer: onlinePeer ?? undefined })
+              setOnlinePeer(null)
             }}
             onBack={leaveOnline}
             challengeTo={challengeTo}
@@ -268,10 +280,11 @@ function AppScreens() {
             role={screen.role}
             room={screen.room}
             jersey={jersey}
+            peerUsername={screen.challengeTo ?? screen.peer}
             onRoomReady={screen.challengeTo ? (id) => void sendChallenge(screen.challengeTo!, 'friendly', id) : undefined}
             onReady={(link, theirs, hostStadium, roomId) => {
               if (screen.role === 'guest') clearInvite()
-              startFriend(screen.role, link, theirs, hostStadium, roomId)
+              startFriend(screen.role, link, theirs, hostStadium, roomId, screen.challengeTo ?? screen.peer)
             }}
             onCancel={() => {
               if (screen.role === 'guest') clearInvite()

@@ -45,7 +45,7 @@ Players can sign up with a username and password only (no email, no real name) t
 
 ### Profiles and challenges
 
-Signed-in players can edit a public profile (shirt, name tag, short bio) and challenge each other to a friendly room or an online two-wallet match. Challenges expire after 2 minutes and are limited in the database. Challenges are just for fun: be kind, no harassment. Setup steps are in `supabase/README.md`.
+Signed-in players can edit a public profile (shirt, name tag, short bio) and challenge each other to a friendly room or an online two-wallet match. Challenges expire after 2 minutes and are limited in the database. Challenges are just for fun: be kind, no harassment. Signed-in players can also add a profile picture (cropped to a square, shrunk and re-saved without location data); a picture is shown to others only after the owner of the project approves it. Setup steps are in `supabase/README.md` and `supabase/avatars/README.md`.
 
 ### Languages
 

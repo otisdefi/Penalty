@@ -45,6 +45,10 @@ If pasting the whole file is cut off on your phone, use the five smaller files i
 No email, real name, age, location or wallet address is stored. Challenges are for friendly or online (two-wallet) private
 matches; they do not change the verified leaderboard.
 
+## 2c. Profile pictures (optional, later)
+
+Setup, check queries, the storage bucket and the `purge-avatars` function: see `supabase/avatars/README.md`.
+
 ## 3. Turn off email confirmation (required)
 
 **Authentication > Sign In / Providers > Email**:

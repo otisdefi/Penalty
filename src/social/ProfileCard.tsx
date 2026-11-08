@@ -1,3 +1,6 @@
+import { Avatar } from '../avatar/Avatar'
+import { reportAvatar } from '../avatar/api'
+import { useAvatarEntry } from '../avatar/store'
 import { useCallback, useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { Ban, Flag, Loader2, Swords, VolumeX, Volume2, X } from 'lucide-react'
@@ -32,9 +35,10 @@ export function ProfileCardHost() {
   const { list } = useChallenges()
   const [load, setLoad] = useState<Load>({ status: 'loading' })
   const [step, setStep] = useState<'card' | 'mode'>('card')
-  const [busy, setBusy] = useState<'mute' | 'block' | 'report' | null>(null)
+  const [busy, setBusy] = useState<'mute' | 'block' | 'report' | 'picture' | null>(null)
   const [message, setMessage] = useState<MessageKey | null>(null)
   const [reported, setReported] = useState(false)
+  const [pictureReported, setPictureReported] = useState(false)
 
   const username = target?.username ?? null
   const signedIn = auth.status === 'in'
@@ -68,6 +72,7 @@ export function ProfileCardHost() {
     return () => window.removeEventListener('keydown', onKey)
   }, [username])
 
+  const avatarEntry = useAvatarEntry(username)
   if (!target || !username) return null
 
   const close = () => {
@@ -76,6 +81,7 @@ export function ProfileCardHost() {
     setStep('card')
     setMessage(null)
     setReported(false)
+    setPictureReported(false)
   }
 
   const profile = load.status === 'ok' ? load.profile : null
@@ -108,6 +114,16 @@ export function ProfileCardHost() {
     setBusy(null)
     if (!result.ok) setMessage(result.error)
     else await reload()
+  }
+
+  const reportPicture = async () => {
+    if (!profile) return
+    setBusy('picture')
+    setMessage(null)
+    const result = await reportAvatar(profile.username)
+    setBusy(null)
+    if (result.ok) setPictureReported(true)
+    else setMessage(result.error)
   }
 
   const report = async () => {
@@ -170,7 +186,8 @@ export function ProfileCardHost() {
         ) : profile ? (
           <>
             <div className="flex items-center gap-4">
-              <svg viewBox="-16 -16 32 32" className="h-20 w-20 shrink-0" aria-hidden>
+              <Avatar username={profile.username} size={64} />
+              <svg viewBox="-16 -16 32 32" className="h-14 w-14 shrink-0" aria-hidden>
                 <JerseyDot
                   jersey={{ color: profile.jerseyColor, secondary: profile.jerseySecondary, pattern: profile.jerseyPattern, number: profile.jerseyNumber, tag: profile.nameTag }}
                   number={profile.jerseyNumber}
@@ -257,6 +274,13 @@ export function ProfileCardHost() {
                   {reported ? t('chat.reported') : t('social.card.report')}
                 </button>
               </div>
+            )}
+
+            {!profile.isMe && avatarEntry.url !== null && (
+              <button type="button" className="btn btn-ghost w-full" style={{ minHeight: 44, fontSize: 13 }} disabled={busy !== null || pictureReported} onClick={() => void reportPicture()}>
+                {busy === 'picture' ? <Loader2 size={14} className="animate-spin" /> : <Flag size={14} />}
+                {pictureReported ? t('avatar.reported') : t('avatar.report')}
+              </button>
             )}
 
             {message && (

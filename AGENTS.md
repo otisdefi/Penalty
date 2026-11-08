@@ -91,3 +91,8 @@ bun run dev
 - App: `src/social/` (`api.ts` database calls, `challenges.ts` engine with Realtime plus polling fallback, `ProfileCard.tsx`, `MyProfile.tsx`, `ChallengeHost.tsx` notifications, `blocks.ts`, `nav.ts` bridge to App).
 - Private two-wallet rooms are unranked in the contract, so the online challenge mode is called "Online match (two wallets)", not ranked.
 
+## Profile pictures
+
+- SQL: `supabase/avatars/` (five parts, run in order after the profiles and challenges SQL), `avatars_checks.sql` for read-only checks, and the `purge-avatars` Edge Function in `supabase/functions/purge-avatars/` (deletes rejected or removed files through the Storage API).
+- App: `src/avatar/` (`processImage.ts` checks and crops, `api.ts` database and storage calls, `store.ts` shared cache, `Avatar.tsx` round picture or generated default, `AvatarUpload.tsx` upload screen in My profile).
+- Rules live in the database and storage policies: private bucket, one file per player named by user id, WebP or JPEG up to 512 KB, 3 uploads a day, pending until approved, hidden after 3 reports.

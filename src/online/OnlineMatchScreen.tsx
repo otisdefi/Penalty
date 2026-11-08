@@ -5,6 +5,7 @@ import { formatUnits } from 'viem'
 import { ArrowLeft, Loader2, Volume2, VolumeX } from 'lucide-react'
 import Pitch from '@/components/Pitch'
 import { Scoreboard } from '@/components/Scoreboard'
+import { useAuth } from '../chat/account'
 import { penaltyMatchAbi } from './abi'
 import { MATCH_ADDRESS, ONLINE_CHAIN_ID, STEP_TIMEOUT_S } from './config'
 import { STATUS, ZERO_ADDRESS, kickFlags, sameAddress, slotsFor } from './helpers'
@@ -29,6 +30,8 @@ import { useI18n, type TFunction } from '@/i18n'
 
 interface Props {
   matchId: bigint
+  /** The other player's username when this match came from a challenge (so it is verified). */
+  peerUsername?: string
   onExit: () => void
 }
 
@@ -36,8 +39,10 @@ const SHOOT_LABELS = ['match.shoot.left', 'match.shoot.center', 'match.shoot.rig
 const KEEP_LABELS = ['match.keep.left', 'match.keep.stay', 'match.keep.right'] as const
 const RIVAL_JERSEY: Jersey = { color: '#3a86ff', number: 7, pattern: 'solid', secondary: '#f1f5f9', tag: '' }
 
-export function OnlineMatchScreen({ matchId, onExit }: Props) {
+export function OnlineMatchScreen({ matchId, peerUsername, onExit }: Props) {
   const { t, n } = useI18n()
+  const auth = useAuth()
+  const myUsername = auth.status === 'in' ? auth.user?.username : undefined
   const o = useOnlineMatch(matchId)
   const { address } = useAccount()
   const publicClient = usePublicClient({ chainId: ONLINE_CHAIN_ID })
@@ -169,6 +174,7 @@ export function OnlineMatchScreen({ matchId, onExit }: Props) {
         kits={kits}
         myTeam={o.myTeam}
         names={names}
+        avatars={{ [o.myTeam]: myUsername, [o.myTeam === 'red' ? 'blue' : 'red']: peerUsername }}
         shooterTeam={shooterTeam}
         done={finished}
         choosing={timerOn}

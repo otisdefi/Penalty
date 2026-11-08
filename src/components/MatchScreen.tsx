@@ -31,13 +31,15 @@ interface Props {
   stadium?: StadiumId
   /** Friend room code, used as the chat channel (friend matches only). */
   roomId?: string
+  /** Usernames of verified account holders per team (shown as round pictures in the scoreboard). */
+  avatars?: Partial<Record<Team, string>>
   onExit: () => void
 }
 
 const SHOOT_LABELS = ['match.shoot.left', 'match.shoot.center', 'match.shoot.right'] as const
 const KEEP_LABELS = ['match.keep.left', 'match.keep.stay', 'match.keep.right'] as const
 
-export function MatchScreen({ mode, ranked, myTeam, kits, link, names, recolored = false, stadium, roomId, onExit }: Props) {
+export function MatchScreen({ mode, ranked, myTeam, kits, link, names, recolored = false, stadium, roomId, avatars, onExit }: Props) {
   const { t, n } = useI18n()
   const m = useMatch({ mode, myTeam, link })
   const mine = useCosmetics()
@@ -101,6 +103,7 @@ export function MatchScreen({ mode, ranked, myTeam, kits, link, names, recolored
         kits={kits}
         myTeam={myTeam}
         names={names}
+        avatars={avatars}
         shooterTeam={shooterTeam}
         done={done}
         choosing={choosing}

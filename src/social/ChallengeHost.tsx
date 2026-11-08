@@ -1,8 +1,10 @@
+import { Avatar } from '../avatar/Avatar'
 import { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
-import { Check, Loader2, Swords, X } from 'lucide-react'
+import { Check, Loader2, X } from 'lucide-react'
 import { useI18n, type MessageKey } from '@/i18n'
 import { useAuth } from '../chat/account'
+import { startAvatarEngine, stopAvatarEngine } from '../avatar/store'
 import { type Challenge } from './api'
 import { clearBlocks, refreshBlocks } from './blocks'
 import { clearSendError, respondToChallenge, startEngine, stopEngine, useChallenges, cancelOutgoing } from './challenges'
@@ -55,12 +57,17 @@ export function ChallengeHost() {
   useEffect(() => {
     if (!userId) {
       stopEngine()
+      stopAvatarEngine()
       clearBlocks()
       return
     }
     void startEngine(userId)
+    startAvatarEngine()
     void refreshBlocks()
-    return () => stopEngine()
+    return () => {
+      stopEngine()
+      stopAvatarEngine()
+    }
   }, [userId])
 
   const incoming = list.filter((c) => c.direction === 'in' && c.status === 'pending')
@@ -98,7 +105,7 @@ export function ChallengeHost() {
         return (
           <div key={c.id} role="alertdialog" aria-label={t('social.in.title', { name: c.other })} className="panel pointer-events-auto w-full max-w-sm space-y-2 p-3" style={{ background: '#0b1630', boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }}>
             <div className="flex items-start gap-3">
-              <Swords size={20} style={{ color: 'var(--lime)' }} className="mt-0.5 shrink-0" aria-hidden />
+              <Avatar username={c.other} size={36} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold">{t('social.in.title', { name: c.other })}</p>
                 <p className="text-xs" style={{ color: 'var(--muted)' }}>
@@ -128,6 +135,7 @@ export function ChallengeHost() {
 
       {(showOutgoing && outgoing && outStatus) || sendError ? (
         <div className="panel pointer-events-auto flex w-full max-w-sm items-center gap-3 p-3" style={{ background: '#0b1630', boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }} role="status">
+          {outgoing && showOutgoing && <Avatar username={outgoing.other} size={32} />}
           <div className="min-w-0 flex-1">
             {sendError && !showOutgoing ? (
               <p className="text-xs text-pretty" style={{ color: 'var(--bad)' }}>

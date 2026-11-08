@@ -5,6 +5,7 @@ import { LanguageButton } from '@/components/LanguageButton'
 import { TestnetBadge } from '@/components/TestnetBadge'
 import { LEADERBOARD_ADDRESS, LEADERBOARD_CHAIN_ID, leaderboardAbi } from '@/contract'
 import { JerseyDot } from '@/cosmetics/art'
+import { AvatarUpload } from '@/avatar/AvatarUpload'
 import { JerseyStep } from '@/cosmetics/JerseyStep'
 import { NAME_MAX, tagMessage, tagProblem, trimTag } from '@/cosmetics/nameFilter'
 import { useCosmetics } from '@/cosmetics/store'
@@ -158,6 +159,8 @@ export function MyProfile({ onBack }: { onBack: () => void }) {
           {t('social.me.usernameFixed')}
         </p>
       </section>
+
+      <AvatarUpload />
 
       <section className="panel p-4">
         <JerseyStep address={address} />

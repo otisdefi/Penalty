@@ -6,6 +6,7 @@ import type { Jersey } from '@/game/storage'
 import type { StadiumId } from '@/cosmetics/types'
 import { buildShareLink } from '@/lib/share'
 import Pitch from '@/components/Pitch'
+import { Avatar } from '@/avatar/Avatar'
 import { JerseyDot } from '@/cosmetics/art'
 import { JerseyEditor } from '@/cosmetics/JerseyEditor'
 import { displayName } from '@/cosmetics/identity'
@@ -22,6 +23,8 @@ interface Props {
   onCancel: () => void
   /** Called once the host's room code exists (used to send it in a challenge). */
   onRoomReady?: (roomId: string) => void
+  /** The other player's username when this room came from a challenge (so it is verified). */
+  peerUsername?: string
 }
 
 const formatClock = (ms: number, pad: (v: number) => string): string => {
@@ -74,7 +77,7 @@ function useWakeLock(active: boolean): void {
   }, [active])
 }
 
-export function FriendLobby({ role, room, jersey, onReady, onCancel, onRoomReady }: Props) {
+export function FriendLobby({ role, room, jersey, onReady, onCancel, onRoomReady, peerUsername }: Props) {
   const { t, n } = useI18n()
   const [runKey, setRunKey] = useState(0)
   const [roomId, setRoomId] = useState<string | null>(room)
@@ -312,9 +315,13 @@ export function FriendLobby({ role, room, jersey, onReady, onCancel, onRoomReady
         </div>
 
         <div className="flex items-center gap-3 rounded-2xl p-3 text-left" style={{ background: 'rgba(255,255,255,0.06)' }}>
-          <svg viewBox="-13 -13 26 26" className="h-11 w-11 shrink-0" aria-hidden>
-            <JerseyDot jersey={theirKit} number={theirKit.number} r={12} fontSize={11} />
-          </svg>
+          {peerUsername ? (
+            <Avatar username={peerUsername} size={44} />
+          ) : (
+            <svg viewBox="-13 -13 26 26" className="h-11 w-11 shrink-0" aria-hidden>
+              <JerseyDot jersey={theirKit} number={theirKit.number} r={12} fontSize={11} />
+            </svg>
+          )}
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-bold">{theirName}</span>
             <span className="block text-xs" style={{ color: theirReady ? 'var(--good)' : 'var(--muted)' }} role="status">

@@ -1,3 +1,4 @@
+import { Avatar } from '@/avatar/Avatar'
 import { Check, Timer, X } from 'lucide-react'
 import { CHOICE_SECONDS, REGULATION, type Status, type Team } from '@/game/logic'
 import type { Jersey } from '@/game/storage'
@@ -17,6 +18,8 @@ interface Props {
   secondsLeft: number
   /** Length of the countdown in seconds (defaults to the offline 10 seconds). */
   totalSeconds?: number
+  /** Usernames of verified account holders per team; their round picture replaces the number badge. */
+  avatars?: Partial<Record<Team, string>>
 }
 
 function Circle({ result, next, t }: { result: boolean | undefined; next: boolean; t: TFunction }) {
@@ -42,8 +45,9 @@ function Circle({ result, next, t }: { result: boolean | undefined; next: boolea
   )
 }
 
-function Row({ team, kit, name, isMe, acting, results, slots, score, nextIndex, t }: {
+function Row({ team, kit, name, avatar, isMe, acting, results, slots, score, nextIndex, t }: {
   t: TFunction
+  avatar?: string
   team: Team
   kit: Jersey
   name: string
@@ -63,12 +67,16 @@ function Row({ team, kit, name, isMe, acting, results, slots, score, nextIndex, 
         boxShadow: acting ? `inset 0 0 0 2px ${YELLOW}` : 'inset 0 0 0 1px rgba(255,255,255,0.08)',
       }}
     >
-      <span
-        className="display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg font-extrabold"
-        style={{ background: kit.color, color: textOn(kit.color), boxShadow: '0 0 0 1px rgba(255,255,255,0.25)' }}
-      >
-        {formatNumber(kit.number)}
-      </span>
+      {avatar ? (
+        <Avatar username={avatar} size={36} />
+      ) : (
+        <span
+          className="display flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg font-extrabold"
+          style={{ background: kit.color, color: textOn(kit.color), boxShadow: '0 0 0 1px rgba(255,255,255,0.25)' }}
+        >
+          {formatNumber(kit.number)}
+        </span>
+      )}
       <div className="w-[88px] shrink-0 space-y-0.5">
         <p className="truncate text-[12px] font-bold leading-tight" title={name}>
           {name}
@@ -94,7 +102,7 @@ function Row({ team, kit, name, isMe, acting, results, slots, score, nextIndex, 
   )
 }
 
-export function Scoreboard({ status, kicksTaken, kits, myTeam, names, shooterTeam, done, choosing, secondsLeft, totalSeconds = CHOICE_SECONDS }: Props) {
+export function Scoreboard({ status, kicksTaken, kits, myTeam, names, shooterTeam, done, choosing, secondsLeft, totalSeconds = CHOICE_SECONDS, avatars }: Props) {
   const { t, n } = useI18n()
   const suddenDeath = kicksTaken >= REGULATION * 2
   const round = Math.floor(kicksTaken / 2) + 1
@@ -131,6 +139,7 @@ export function Scoreboard({ status, kicksTaken, kits, myTeam, names, shooterTea
           team={tm}
           kit={kits[tm]}
           name={names[tm]}
+          avatar={avatars?.[tm]}
           isMe={tm === myTeam}
           acting={!done && tm === shooterTeam}
           results={results[tm]}
