@@ -25,7 +25,7 @@ const STATUS_TEXT: Record<'none' | 'pending' | 'approved' | 'rejected', MessageK
   rejected: 'avatar.status.rejected',
 }
 
-type Notice = { kind: 'ok' | 'err'; key: MessageKey }
+type Notice = { kind: 'ok' | 'err'; key: MessageKey; detail?: string }
 
 /** "Profile picture" section of My profile: choose, crop, save, and remove. Nothing here asks for personal details. */
 export function AvatarUpload() {
@@ -83,7 +83,7 @@ export function AvatarUpload() {
       }
       const up = await uploadAvatar(user.id, enc.encoded.blob, enc.encoded.type)
       if (!up.ok) {
-        setNotice({ kind: 'err', key: up.error })
+        setNotice({ kind: 'err', key: up.error, detail: up.detail })
         return
       }
       setPicked(null)
@@ -190,9 +190,16 @@ export function AvatarUpload() {
       )}
 
       {notice && (
-        <p role="status" className="break-words text-center text-sm" style={{ color: notice.kind === 'ok' ? 'var(--good)' : 'var(--bad)' }}>
-          {t(notice.key)}
-        </p>
+        <div role="status" className="space-y-1 text-center">
+          <p className="break-words text-sm" style={{ color: notice.kind === 'ok' ? 'var(--good)' : 'var(--bad)' }}>
+            {t(notice.key)}
+          </p>
+          {notice.detail && (
+            <p className="select-text break-all text-[11px] leading-snug" lang="en" style={{ color: 'var(--muted)' }}>
+              {t('avatar.details')}: {notice.detail}
+            </p>
+          )}
+        </div>
       )}
 
       <p className="break-words text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>

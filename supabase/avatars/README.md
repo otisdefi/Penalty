@@ -73,3 +73,11 @@ function. It is safe either way: it only deletes files the database has already 
 - A new or changed picture is `pending`: only its owner can see it. It becomes public only after you approve it.
 - Other signed-in players can read only approved pictures of players who are not banned and have not blocked them.
 - Guests never read pictures; they see a default avatar made from the player's jersey colours and number.
+
+## If the first upload failed with HTTP 400 ("new row violates row-level security policy")
+
+Storage reads the new file row back right after writing it, and the first version of the read rule only allowed a picture
+that was already pending or approved. Run `supabase/avatars/avatars_fix1_upload_returning.sql` once (SQL Editor, new query,
+paste, Run; it is safe to run again). New installs already get the fix in part 2. After it, the upload should succeed.
+The upload screen now also shows the real error under the message (step, text, HTTP status and code) and writes it to the
+browser console as `[avatar upload]`; if it fails again, send me that line.

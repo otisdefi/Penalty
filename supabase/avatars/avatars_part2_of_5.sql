@@ -24,7 +24,7 @@ revoke execute on function public.can_upload_avatar(text) from public, anon;
 grant execute on function public.can_upload_avatar(text) to authenticated;
 
 -- May the signed-in player read this object? (Banned players read nothing.)
---   * their own picture while it is pending or approved
+--   * their own picture while it is pending or approved, or while they hold an upload ticket
 --   * somebody else's picture only when it is approved, the owner is not banned, and the owner has not blocked them
 create or replace function public.can_read_avatar(p_name text) returns boolean
 language plpgsql stable security definer set search_path = public
@@ -40,7 +40,14 @@ begin
   owner_id := p_name::uuid;
   if exists (select 1 from public.profiles r where r.id = me and r.banned) then return false; end if;
   if owner_id = me then
-    return exists (select 1 from public.profiles p where p.id = me and not p.banned and p.avatar_status in ('pending', 'approved'));
+    -- Own file: while pending or approved, and also while an upload ticket is open. Storage reads the new row back
+    -- right after writing it (INSERT ... RETURNING), so the first upload would be refused without the ticket clause.
+    return exists (
+      select 1 from public.profiles p
+       where p.id = me and not p.banned
+         and (p.avatar_status in ('pending', 'approved')
+              or exists (select 1 from public.avatar_tickets t where t.user_id = me and t.expires_at > now()))
+    );
   end if;
   return exists (
     select 1 from public.profiles p

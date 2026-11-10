@@ -549,6 +549,7 @@ const es: Locale = {
     'net.sameNetwork': "Los dos jugadores deben estar en {network} para esta partida.",
     'net.inviteOther': "Esta partida está en {network}.",
     'net.useNetwork': "Usar {network}",
+    'avatar.details': "Detalles",
   },
 }
 

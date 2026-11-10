@@ -549,6 +549,7 @@ const tr: Locale = {
     'net.sameNetwork': "Bu maç için iki oyuncu da {network} ağında olmalı.",
     'net.inviteOther': "Bu maç {network} ağında.",
     'net.useNetwork': "{network} ağını kullan",
+    'avatar.details': "Ayrıntılar",
   },
 }
 

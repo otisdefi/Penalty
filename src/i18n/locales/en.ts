@@ -559,6 +559,7 @@ const messages = {
   'net.sameNetwork': "Both players must be on {network} for this match.",
   'net.inviteOther': "This match is on {network}.",
   'net.useNetwork': "Use {network}",
+  'avatar.details': "Details",
 } as const
 
 export default { code: 'en', name: 'English', messages }

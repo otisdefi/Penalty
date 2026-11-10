@@ -549,6 +549,7 @@ const ru: Locale = {
     'net.sameNetwork': "Для этого матча оба игрока должны быть в сети {network}.",
     'net.inviteOther': "Этот матч в сети {network}.",
     'net.useNetwork': "Выбрать {network}",
+    'avatar.details': "Подробности",
   },
 }
 

@@ -13,7 +13,8 @@ export const BUCKET = 'avatars'
 export const SIGNED_URL_SECONDS = 1800
 
 export type AvatarStatus = 'none' | 'pending' | 'approved' | 'rejected'
-export type Outcome<T = object> = ({ ok: true } & T) | { ok: false; error: MessageKey }
+/** A failure carries a plain-language message key and, when there is one, the technical details of the real error. */
+export type Outcome<T = object> = ({ ok: true } & T) | { ok: false; error: MessageKey; detail?: string }
 
 export interface AvatarInfo {
   username: string
@@ -109,19 +110,73 @@ export async function fetchSignedUrls(paths: string[]): Promise<Map<string, stri
  * 2. upload the file under the player's own id,
  * 3. confirm, so the picture is marked "pending" until the owner of the app approves it.
  */
+const MAX_UPLOAD_BYTES = 512 * 1024 // the same limit as the bucket
+const UPLOAD_TYPES = ['image/webp', 'image/jpeg']
+const USER_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+
+/** One short line with the real error: the step, the message, the HTTP status and the error code. No tokens, no secrets. */
+export function describeError(step: string, err: unknown, context = ''): string {
+  const e = (typeof err === 'object' && err !== null ? err : {}) as Record<string, unknown>
+  const message = typeof e.message === 'string' && e.message ? e.message : typeof err === 'string' ? err : 'unknown error'
+  const meta: string[] = []
+  const text = (x: unknown): string => (typeof x === 'string' || typeof x === 'number' ? String(x) : '')
+  const status = text(e.status)
+  if (status) meta.push(`HTTP ${status}`)
+  const code = text(e.statusCode) || text(e.code)
+  if (code && code !== status) meta.push(`code ${code}`)
+  if (typeof e.hint === 'string' && e.hint) meta.push(`hint: ${e.hint}`)
+  return `${step}: ${message}${meta.length ? ` (${meta.join(', ')})` : ''}${context ? ` [${context}]` : ''}`
+}
+
+/**
+ * The upload, in the three steps the database expects: ticket, file, confirm. Before anything is sent it checks what the
+ * storage rules check: the type is exactly image/webp or image/jpeg, the size is under the bucket limit, the object path is
+ * exactly the player's id (no folder, no extension) and the request belongs to the signed-in player.
+ *
+ * The file is sent as raw bytes with an explicit Content-Type header. (With a Blob, the storage client ignores the
+ * contentType option and sends a multipart form whose type comes from the Blob.)
+ */
 export async function uploadAvatar(userId: string, blob: Blob, contentType: 'image/webp' | 'image/jpeg'): Promise<Outcome> {
   if (!CHAT_CONFIGURED) return { ok: false, error: 'social.err.generic' }
+  const context = `type=${contentType} size=${blob.size}B path=${userId.length === 36 ? 'user-id' : 'invalid'}`
+  const fail = (step: string, error: MessageKey, err: unknown): Outcome => {
+    const detail = describeError(step, err, context)
+    console.error('[avatar upload]', {
+      step,
+      message: (err as { message?: unknown } | null)?.message ?? String(err),
+      status: (err as { status?: unknown } | null)?.status,
+      statusCode: (err as { statusCode?: unknown } | null)?.statusCode,
+      code: (err as { code?: unknown } | null)?.code,
+      type: contentType,
+      bytes: blob.size,
+      blobType: blob.type,
+    })
+    return { ok: false, error, detail }
+  }
+
+  if (!UPLOAD_TYPES.includes(contentType)) return fail('check', 'avatar.img.unsupported', new Error('the picture type must be image/webp or image/jpeg'))
+  if (blob.size <= 0 || blob.size > MAX_UPLOAD_BYTES) return fail('check', 'avatar.img.tooLarge', new Error(`the picture must be between 1 byte and ${MAX_UPLOAD_BYTES} bytes`))
+  if (!USER_ID.test(userId)) return fail('check', 'avatar.err.uploadFailed', new Error('the object path must be exactly the user id'))
+
   try {
     const sb = await getSupabase()
+    const session = await sb.auth.getSession()
+    const token = (session as { data?: { session?: { access_token?: string; user?: { id?: string } } | null } }).data?.session
+    if (!token?.access_token) return fail('session', 'social.err.signin', new Error('no signed-in session'))
+    if (token.user?.id && token.user.id !== userId) return fail('session', 'avatar.err.uploadFailed', new Error('the session belongs to another user'))
+
     const ticket = await rpc('request_avatar_upload')
-    if (ticket.error) return { ok: false, error: avatarErrorKey(ticket.error) }
-    const put = await sb.storage.from(BUCKET).upload(userId, blob, { upsert: true, contentType, cacheControl: '3600' })
-    if (put.error) return { ok: false, error: avatarErrorKey(put.error) }
+    if (ticket.error) return fail('ticket', avatarErrorKey(ticket.error), ticket.error)
+
+    const bytes = await blob.arrayBuffer()
+    const put = await sb.storage.from(BUCKET).upload(userId, bytes, { upsert: true, contentType, cacheControl: '3600' })
+    if (put.error) return fail('upload', avatarErrorKey(put.error), put.error)
+
     const done = await rpc('confirm_avatar_uploaded')
-    if (done.error) return { ok: false, error: avatarErrorKey(done.error) }
+    if (done.error) return fail('confirm', avatarErrorKey(done.error), done.error)
     return { ok: true }
   } catch (e) {
-    return { ok: false, error: avatarErrorKey(e) }
+    return fail('upload', avatarErrorKey(e), e)
   }
 }
 
