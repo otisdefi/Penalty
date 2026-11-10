@@ -74,6 +74,15 @@ html {
   cursor: pointer;
 }
 
+/* Buttons whose label must stay on one line (wallet, account): no wrapping, no hyphenation, never squeezed. */
+.btn-nowrap {
+  white-space: nowrap;
+  text-wrap: nowrap;
+  overflow-wrap: normal;
+  hyphens: manual;
+  flex-shrink: 0;
+}
+
 .btn:active:not(:disabled) {
   transform: scale(0.98);
 }

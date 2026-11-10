@@ -250,18 +250,20 @@ function AppScreens() {
   return (
     <div className="relative min-h-dvh overflow-hidden" style={{ background: 'radial-gradient(120% 80% at 50% -10%, #12306b 0%, #060d1f 60%)' }}>
       <div className="relative z-10 mx-auto max-w-5xl px-4 pb-12 pt-4">
-        <header className="mb-6 flex items-center justify-between">
-          <NetworkSelector />
-          <div className="flex items-center gap-2">
-          <LanguageButton />
+        {/* Phones: network on the left, language and account as compact buttons on the right, the wallet button on
+            its own full-width row. From 640 px up everything sits on one row. */}
+        <header className="mb-6 flex flex-wrap items-center gap-2 sm:flex-nowrap">
+          <NetworkSelector className="min-w-0 flex-1" />
+          <LanguageButton className="shrink-0" />
           <AccountChip />
-          <ConnectKitButton.Custom>
-            {({ isConnected, show, truncatedAddress }) => (
-              <button type="button" onClick={show} className="btn btn-ghost" style={{ width: 'auto', minHeight: 44 }}>
-                {isConnected ? truncatedAddress : t('app.connect')}
-              </button>
-            )}
-          </ConnectKitButton.Custom>
+          <div className="w-full sm:w-auto sm:shrink-0">
+            <ConnectKitButton.Custom>
+              {({ isConnected, show, truncatedAddress }) => (
+                <button type="button" onClick={show} className="btn btn-ghost btn-nowrap" style={{ minHeight: 44, minWidth: 148 }}>
+                  {isConnected ? truncatedAddress : t('app.connect')}
+                </button>
+              )}
+            </ConnectKitButton.Custom>
           </div>
         </header>
 

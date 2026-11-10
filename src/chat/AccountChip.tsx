@@ -12,11 +12,12 @@ export function AccountChip() {
       type="button"
       onClick={() => openAuthDialog()}
       aria-label={signedIn ? t('auth.chip.account', { name: auth.user!.username }) : t('auth.chip.signin')}
-      className="btn btn-ghost"
-      style={{ width: 'auto', minHeight: 40, padding: '0 12px', maxWidth: 140 }}
+      title={signedIn ? auth.user!.username : t('auth.chip.signin')}
+      className="btn btn-ghost btn-nowrap max-sm:!w-11 max-sm:!min-w-0 max-sm:!px-0"
+      style={{ width: 'auto', minHeight: 44, padding: '0 14px', maxWidth: 160, flexShrink: 0 }}
     >
       <User size={16} aria-hidden />
-      <span className="truncate text-sm">{signedIn ? auth.user!.username : t('auth.chip.signin')}</span>
+      <span className="hidden truncate text-sm sm:inline">{signedIn ? auth.user!.username : t('auth.chip.signin')}</span>
     </button>
   )
 }
