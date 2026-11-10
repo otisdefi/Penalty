@@ -3,7 +3,8 @@ import { useAccount, useReadContract } from 'wagmi'
 import { ArrowLeft, Check, Loader2 } from 'lucide-react'
 import { LanguageButton } from '@/components/LanguageButton'
 import { TestnetBadge } from '@/components/TestnetBadge'
-import { LEADERBOARD_ADDRESS, LEADERBOARD_CHAIN_ID, leaderboardAbi } from '@/contract'
+import { leaderboardAbi } from '@/contract'
+import { useNetwork } from '@/networks'
 import { JerseyDot } from '@/cosmetics/art'
 import { AvatarUpload } from '@/avatar/AvatarUpload'
 import { JerseyStep } from '@/cosmetics/JerseyStep'
@@ -62,14 +63,15 @@ export function MyProfile({ onBack }: { onBack: () => void }) {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<MessageKey | null>(null)
 
+  const net = useNetwork()
   // Ranked numbers come from the public leaderboard record of the connected wallet. They are only sent if sharing is on.
   const record = useReadContract({
-    address: LEADERBOARD_ADDRESS,
+    address: net.leaderboardAddress,
     abi: leaderboardAbi,
     functionName: 'getRecord',
     args: address ? [address] : undefined,
-    chainId: LEADERBOARD_CHAIN_ID,
-    query: { enabled: !!address },
+    chainId: net.chainId,
+    query: { enabled: !!address && !!net.leaderboardAddress },
   })
 
   const userId = auth.user?.id

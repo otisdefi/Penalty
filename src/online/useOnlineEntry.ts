@@ -5,15 +5,17 @@ import { encodeFunctionData } from 'viem'
 import type { Hex } from 'viem'
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
 import { penaltyMatchAbi } from './abi'
-import { FUNDED_TXS, GAS_PER_TX, MATCH_ADDRESS, ONLINE_CHAIN_ID } from './config'
+import { fundingFor } from './config'
+import type { NetworkConfig } from '../networks'
 import { ZERO_ADDRESS, padGas, randomBytes32, roomCodeHash } from './helpers'
 import { clearPendingKey, saveStored, savePendingKey } from './storage'
 import { isUserRejection, parseOnchainError } from '@/lib/errors'
 
 /** Creates, joins or queues for an onchain match and returns the new match id. */
-export function useOnlineEntry() {
+export function useOnlineEntry(net: NetworkConfig) {
+  const matchAddress = net.matchAddress
   const { address, chainId } = useAccount()
-  const publicClient = usePublicClient({ chainId: ONLINE_CHAIN_ID })
+  const publicClient = usePublicClient({ chainId: net.chainId })
   const { sendTransactionAsync } = useSendTransaction()
   const { switchChainAsync } = useSwitchChain()
   const [busy, setBusy] = useState<'create' | 'join' | 'quick' | null>(null)
@@ -23,8 +25,8 @@ export function useOnlineEntry() {
   const quoteFunding = useCallback(async (): Promise<bigint> => {
     if (!publicClient) return 0n
     const gasPrice = await publicClient.getGasPrice()
-    return gasPrice * GAS_PER_TX * FUNDED_TXS
-  }, [publicClient])
+    return fundingFor(net, gasPrice)
+  }, [publicClient, net])
 
   const execute = useCallback(
     async (
@@ -32,7 +34,7 @@ export function useOnlineEntry() {
       useHelperKey: boolean,
       build: (keyAddress: `0x${string}`, wallet: `0x${string}`) => { data: Hex; roomCode?: Hex },
     ): Promise<bigint | null> => {
-      if (!publicClient || !MATCH_ADDRESS || !address) {
+      if (!publicClient || !matchAddress || !address) {
         setError(translate('online.err.connect'))
         return null
       }
@@ -49,19 +51,19 @@ export function useOnlineEntry() {
           value = await quoteFunding()
         }
         const { data, roomCode } = build(keyAddress, address)
-        if (chainId !== ONLINE_CHAIN_ID) await switchChainAsync({ chainId: ONLINE_CHAIN_ID })
-        const gas = padGas(await publicClient.estimateGas({ account: address, to: MATCH_ADDRESS, data, value }))
-        const hash = await sendTransactionAsync({ to: MATCH_ADDRESS, data, value, chainId: ONLINE_CHAIN_ID, gas })
+        if (chainId !== net.chainId) await switchChainAsync({ chainId: net.chainId })
+        const gas = padGas(await publicClient.estimateGas({ account: address, to: matchAddress, data, value }))
+        const hash = await sendTransactionAsync({ to: matchAddress, data, value, chainId: net.chainId, gas })
         const receipt = await publicClient.waitForTransactionReceipt({ hash })
         if (receipt.status !== 'success') throw new Error('reverted')
         const id = await publicClient.readContract({
-          address: MATCH_ADDRESS,
+          address: matchAddress,
           abi: penaltyMatchAbi,
           functionName: 'currentMatch',
           args: [address],
         })
         if (id === 0n) throw new Error('reverted')
-        saveStored({ id: id.toString(), wallet: address, sessionKey, roomCode, moves: {} })
+        saveStored(net.id, { id: id.toString(), wallet: address, sessionKey, roomCode, moves: {} })
         clearPendingKey()
         return id
       } catch (e) {
@@ -71,7 +73,7 @@ export function useOnlineEntry() {
         setBusy(null)
       }
     },
-    [address, chainId, publicClient, quoteFunding, sendTransactionAsync, switchChainAsync],
+    [address, chainId, publicClient, quoteFunding, sendTransactionAsync, switchChainAsync, net, matchAddress],
   )
 
   const create = useCallback(

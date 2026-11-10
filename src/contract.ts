@@ -1,11 +1,9 @@
 import { parseAbi } from 'viem'
-import { arcTestnet } from 'viem/chains'
-import { DEPLOYED, resolveAddress } from './deployments'
 
-export const LEADERBOARD_CHAIN_ID = arcTestnet.id
-
-/** VITE_LEADERBOARD_ADDRESS when set and valid, otherwise the deployed Arc Testnet leaderboard. */
-export const LEADERBOARD_ADDRESS = resolveAddress(import.meta.env.VITE_LEADERBOARD_ADDRESS as string | undefined, DEPLOYED.leaderboard)
+/*
+ * The ranked leaderboard contract is deployed once per network. Which address and chain to use comes from the
+ * selected network (see src/networks.ts), so each network keeps its own, separate leaderboard.
+ */
 
 export const leaderboardAbi = parseAbi([
   'function recordMatch(bool won)',

@@ -1,6 +1,6 @@
 # Tiebreaker
 
-A penalty shootout game. Play a best-of-five against a bot that learns your habits, challenge a friend over a shareable link, and save your ranked results to a top-ten leaderboard on Arc Testnet.
+A penalty shootout game. Play a best-of-five against a bot that learns your habits, challenge a friend over a shareable link, and save your ranked results to a top-ten leaderboard on Arc Testnet or Base Sepolia (test networks, one separate leaderboard each).
 
 Built with [Arc Studio](https://studio.arc.io)
 
@@ -8,7 +8,8 @@ Built with [Arc Studio](https://studio.arc.io)
 
 - Ranked and practice matches against a bot. A ranked result can be saved onchain only on the result screen right after the match; skipping or leaving discards it
 - Friend matches over a shareable link (peer to peer, free, not saved to the leaderboard)
-- Online matches between two wallets on Arc Testnet: private rooms with a share link, a ranked quick-match queue, hidden moves that both players reveal, a 20 second deadline per step with a forfeit claim, and a verified leaderboard
+- A network selector in the header (Arc Testnet and Base Sepolia). Leaderboards and online matches are separate on each network, both players of an online match must be on the same one, and the gas coin (USDC on Arc, ETH on Base Sepolia), explorer links and faucet hints follow the selected network.
+- Online matches between two wallets on the selected test network: private rooms with a share link, a ranked quick-match queue, hidden moves that both players reveal, a 20 second deadline per step with a forfeit claim, and a verified leaderboard
 - Customize screen with live preview: shirt colour, pattern, secondary colour, number and name tag; ball design and trail; stadium theme (day, night, rainy, sunset, snow)
 - Every colour, pattern, ball, trail and stadium is available to everyone from the start
 - Onchain top ten by wins, plus your own wins, losses and streaks
@@ -53,12 +54,12 @@ English (default), Türkçe, Español, Português and Русский. The game u
 
 ### Environment variables
 
-- `VITE_LEADERBOARD_ADDRESS` (optional): address of the deployed leaderboard contract on Arc Testnet (offline ranked results).
-- `VITE_MATCH_ADDRESS` (optional): address of the deployed online match contract on Arc Testnet.
+- `VITE_LEADERBOARD_ADDRESS_ARC`, `VITE_MATCH_ADDRESS_ARC` (optional): contracts on Arc Testnet. If missing, the deployed ones are used. The older names `VITE_LEADERBOARD_ADDRESS` and `VITE_MATCH_ADDRESS` still work for Arc Testnet.
+- `VITE_LEADERBOARD_ADDRESS_BASE_SEPOLIA`, `VITE_MATCH_ADDRESS_BASE_SEPOLIA` (optional): contracts on Base Sepolia. There is no default; until they are set, that network shows "Not available on this network yet".
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (optional): your Supabase project for accounts and chat. Without them the app shows "Chat is not configured". Setup and SQL: `supabase/README.md`.
 - `VITE_TURNSTILE_SITE_KEY` (optional): Cloudflare Turnstile site key for bot protection on sign-up.
 - `VITE_TURN_URLS`, `VITE_TURN_USERNAME`, `VITE_TURN_CREDENTIAL` (optional, set all three): a TURN relay so friend matches also connect on strict mobile or office networks. These are visible in the built app, so use browser-safe, usage-limited credentials.
 - `VITE_PEER_HOST`, `VITE_PEER_PORT`, `VITE_PEER_PATH`, `VITE_PEER_SECURE` (optional): use your own PeerJS matchmaking server instead of the free PeerJS cloud.
 - `RPC_PROXY_BASE_URL`, `RPC_PROXY_TOKEN`, `RPC_PROXY_CHAINS`: optional outside Arc Studio. Provisioned by Arc Studio for RPC access.
 
-You need a wallet with a little Arc Testnet USDC (used for gas) to save a result.
+You need a wallet with a little test coin for the selected network to save a result: USDC on Arc Testnet (used for gas) or ETH on Base Sepolia.

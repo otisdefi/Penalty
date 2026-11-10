@@ -7,7 +7,9 @@ import Pitch from '@/components/Pitch'
 import { Scoreboard } from '@/components/Scoreboard'
 import { useAuth } from '../chat/account'
 import { penaltyMatchAbi } from './abi'
-import { MATCH_ADDRESS, ONLINE_CHAIN_ID, STEP_TIMEOUT_S } from './config'
+import { STEP_TIMEOUT_S } from './config'
+import { NETWORKS, explorerTxUrl, matchChannel, type NetworkConfig, type NetworkId } from '../networks'
+import { coinFormat } from '@/lib/coin'
 import { STATUS, ZERO_ADDRESS, kickFlags, sameAddress, slotsFor } from './helpers'
 import { OnlineLobby } from './OnlineLobby'
 import { useOnlineMatch } from './useOnlineMatch'
@@ -21,7 +23,6 @@ import { setMuted as setAudioMuted, sfx } from '@/game/audio'
 import { isMuted, setMuted as setWhistleMuted } from '@/lib/whistle'
 import { shortAddress } from '@/lib/errors'
 import { textOn, YELLOW } from '@/lib/color'
-import { buildTxExplorerUrl, requireChain } from '@/onchain-facts'
 import { LanguageButton } from '@/components/LanguageButton'
 import { InlineChat } from '@/chat/InlineChat'
 import { displayName } from '@/cosmetics/identity'
@@ -30,6 +31,8 @@ import { useI18n, type TFunction } from '@/i18n'
 
 interface Props {
   matchId: bigint
+  /** The network this match lives on, fixed when it was opened: both players are on the same one. */
+  network: NetworkId
   /** The other player's username when this match came from a challenge (so it is verified). */
   peerUsername?: string
   onExit: () => void
@@ -39,13 +42,15 @@ const SHOOT_LABELS = ['match.shoot.left', 'match.shoot.center', 'match.shoot.rig
 const KEEP_LABELS = ['match.keep.left', 'match.keep.stay', 'match.keep.right'] as const
 const RIVAL_JERSEY: Jersey = { color: '#3a86ff', number: 7, pattern: 'solid', secondary: '#f1f5f9', tag: '' }
 
-export function OnlineMatchScreen({ matchId, peerUsername, onExit }: Props) {
+export function OnlineMatchScreen({ matchId, network, peerUsername, onExit }: Props) {
   const { t, n } = useI18n()
+  const net = NETWORKS[network]
+  const matchAddress = net.matchAddress
   const auth = useAuth()
   const myUsername = auth.status === 'in' ? auth.user?.username : undefined
-  const o = useOnlineMatch(matchId)
+  const o = useOnlineMatch(matchId, net)
   const { address } = useAccount()
-  const publicClient = usePublicClient({ chainId: ONLINE_CHAIN_ID })
+  const publicClient = usePublicClient({ chainId: net.chainId })
   const [muted, setMutedState] = useState(isMuted)
   const mine = useCosmetics()
   const jersey = mine.jersey
@@ -79,14 +84,14 @@ export function OnlineMatchScreen({ matchId, peerUsername, onExit }: Props) {
   const draw = !!m && finished && sameAddress(m.winner, '0x0000000000000000000000000000000000000000')
 
   const forfeit = useQuery({
-    queryKey: ['pm-forfeit', matchId.toString()],
-    enabled: finished && !!publicClient && !!MATCH_ADDRESS && !!m,
+    queryKey: ['pm-forfeit', net.id, matchId.toString()],
+    enabled: finished && !!publicClient && !!matchAddress && !!m,
     retry: false,
     staleTime: Infinity,
     queryFn: async () => {
-      if (!publicClient || !MATCH_ADDRESS || !m) return null
+      if (!publicClient || !matchAddress || !m) return null
       const logs = await publicClient.getContractEvents({
-        address: MATCH_ADDRESS,
+        address: matchAddress,
         abi: penaltyMatchAbi,
         eventName: 'MatchFinished',
         args: { id: matchId },
@@ -99,15 +104,15 @@ export function OnlineMatchScreen({ matchId, peerUsername, onExit }: Props) {
   })
 
   const record = useQuery({
-    queryKey: ['pm-record', address, finished],
-    enabled: finished && !!m?.ranked && !!address && !!publicClient && !!MATCH_ADDRESS,
+    queryKey: ['pm-record', net.id, address, finished],
+    enabled: finished && !!m?.ranked && !!address && !!publicClient && !!matchAddress,
     queryFn: async () => {
-      if (!publicClient || !MATCH_ADDRESS || !address) return null
-      return publicClient.readContract({ address: MATCH_ADDRESS, abi: penaltyMatchAbi, functionName: 'getRecord', args: [address] })
+      if (!publicClient || !matchAddress || !address) return null
+      return publicClient.readContract({ address: matchAddress, abi: penaltyMatchAbi, functionName: 'getRecord', args: [address] })
     },
   })
 
-  if (!MATCH_ADDRESS) {
+  if (!matchAddress) {
     return <Shell onExit={onExit} muted={muted} onMute={toggleMute} badge={t('online.badge')}><Notice text={t('online.notConfiguredShort')} /></Shell>
   }
   if (!m) {
@@ -118,7 +123,7 @@ export function OnlineMatchScreen({ matchId, peerUsername, onExit }: Props) {
     )
   }
 
-  const badge = m.ranked ? t('online.badgeRanked') : t('online.badgePrivate')
+  const badge = `${m.ranked ? t('online.badgeRanked') : t('online.badgePrivate')} · ${net.name}`
 
   if (stage === 'missing') return <Shell onExit={onExit} muted={muted} onMute={toggleMute} badge={badge}><Notice text={t('online.missing')} action={t('common.back')} onAction={onExit} /></Shell>
   if (stage === 'cancelled') return <Shell onExit={onExit} muted={muted} onMute={toggleMute} badge={badge}><Notice text={t('online.cancelled')} action={t('common.back')} onAction={onExit} /></Shell>
@@ -128,14 +133,15 @@ export function OnlineMatchScreen({ matchId, peerUsername, onExit }: Props) {
       <Shell onExit={onExit} muted={muted} onMute={toggleMute} badge={badge}>
         <OnlineLobby
           matchId={matchId}
+          net={net}
           m={m}
-          roomCode={loadStored(matchId)?.roomCode}
+          roomCode={loadStored(net.id, matchId)?.roomCode}
           chainNow={o.chainNow}
           busy={o.busy}
           error={o.error}
           onCancel={() => void o.cancel().then(onExit)}
         />
-        <InlineChat channel={`match:${matchId.toString()}`} title="chat.title.match" />
+        <InlineChat channel={matchChannel(net, matchId)} title="chat.title.match" />
       </Shell>
     )
   }
@@ -297,11 +303,11 @@ export function OnlineMatchScreen({ matchId, peerUsername, onExit }: Props) {
             </p>
           )}
           {forfeit.data?.tx && (
-            <a href={buildTxExplorerUrl(ONLINE_CHAIN_ID, forfeit.data.tx)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold underline" style={{ color: 'var(--lime)' }}>
+            <a href={explorerTxUrl(net, forfeit.data.tx)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold underline" style={{ color: 'var(--lime)' }}>
               {t('online.viewFinal')}
             </a>
           )}
-          <Sweep o={o} />
+          <Sweep o={o} net={net} />
           <button type="button" className="btn btn-primary" onClick={onExit}>
             {t('online.backMenu')}
           </button>
@@ -312,16 +318,16 @@ export function OnlineMatchScreen({ matchId, peerUsername, onExit }: Props) {
   )
 }
 
-function Sweep({ o }: { o: ReturnType<typeof useOnlineMatch> }) {
+function Sweep({ o, net }: { o: ReturnType<typeof useOnlineMatch>; net: NetworkConfig }) {
   const { t, n } = useI18n()
-  const decimals = requireChain(ONLINE_CHAIN_ID).nativeCurrency.decimals
+  const decimals = net.chain.nativeCurrency.decimals
   if (!o.myKeyRegistered || o.keyBalance <= 0n) return null
   const amount = Number(formatUnits(o.keyBalance, decimals))
-  if (amount < 0.01) return null
+  if (amount < net.minSweep) return null
   return (
     <button type="button" className="btn btn-ghost" disabled={!!o.busy} onClick={() => void o.sweep()}>
       {o.busy === 'sweep' ? <Loader2 size={16} className="animate-spin" /> : null}
-      {t('online.sweep', { amount: n(amount, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}
+      {t('online.sweep', { amount: n(amount, coinFormat(amount)), token: net.gasSymbol })}
     </button>
   )
 }

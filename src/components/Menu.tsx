@@ -5,6 +5,7 @@ import type { Jersey } from '@/game/storage'
 import { sfx } from '@/game/audio'
 import { extractRoomId } from '@/game/peer'
 import { useI18n } from '@/i18n'
+import { useNetwork } from '@/networks'
 import { unlockAudio } from '@/lib/whistle'
 
 interface Props {
@@ -22,6 +23,7 @@ interface Props {
 
 export function Menu({ jersey, onCustomize, invited, onRanked, onPractice, onHost, onJoinInvite, onJoinCode, onOnline }: Props) {
   const { t, n } = useI18n()
+  const net = useNetwork()
   const [code, setCode] = useState('')
   const [codeError, setCodeError] = useState(false)
 
@@ -39,7 +41,7 @@ export function Menu({ jersey, onCustomize, invited, onRanked, onPractice, onHos
         </p>
         <h1 className="display text-6xl font-extrabold leading-[0.9] text-balance">Tiebreaker</h1>
         <p className="max-w-[34ch] text-pretty text-sm" style={{ color: 'var(--muted)' }}>
-          {t('menu.tagline')}
+          {t('menu.tagline', { network: net.name })}
         </p>
       </div>
 

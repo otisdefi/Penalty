@@ -6,10 +6,12 @@ import { formatUnits } from 'viem'
 import type { Hex } from 'viem'
 import { ArrowLeft, KeyRound, Loader2, Play, Swords, Users } from 'lucide-react'
 import { penaltyMatchAbi } from './abi'
-import { MATCH_ADDRESS, ONLINE_CHAIN_ID, STEP_TIMEOUT_S } from './config'
+import { STEP_TIMEOUT_S } from './config'
+import { NETWORKS, setNetwork, useNetwork, type NetworkId } from '../networks'
+import { TestnetBadge } from '@/components/TestnetBadge'
+import { coinFormat } from '@/lib/coin'
 import { STATUS, parseMatch } from './helpers'
 import { useOnlineEntry } from './useOnlineEntry'
-import { requireChain } from '@/onchain-facts'
 import { unlockAudioTap } from './audioTap'
 import { useI18n } from '@/i18n'
 import { ChevronDown } from 'lucide-react'
@@ -21,6 +23,8 @@ import { useCosmetics } from '@/cosmetics/store'
 export interface Invite {
   id: bigint
   code: Hex
+  /** The network the match lives on (from the link, or found by looking at the chains). */
+  network?: NetworkId
 }
 
 interface Props {
@@ -35,41 +39,45 @@ interface Props {
 export function OnlineHome({ invite, onEnter, onBack, challengeTo = null, onChallengeRoom }: Props) {
   const { t, n } = useI18n()
   const { address, isConnected } = useAccount()
-  const publicClient = usePublicClient({ chainId: ONLINE_CHAIN_ID })
-  const { busy, error, create, join, quick, quoteFunding } = useOnlineEntry()
+  const net = useNetwork()
+  const matchAddress = net.matchAddress
+  const publicClient = usePublicClient({ chainId: net.chainId })
+  const { busy, error, create, join, quick, quoteFunding } = useOnlineEntry(net)
+  // An invite is for one network; both players must be on it.
+  const wrongNetwork = invite?.network !== undefined && invite.network !== net.id
   const [useKey, setUseKey] = useState(true)
   const mine = useCosmetics()
   // Someone who was invited should pick their shirt before joining, so it starts open for them.
   const [editJersey, setEditJersey] = useState(invite !== null)
-  const decimals = requireChain(ONLINE_CHAIN_ID).nativeCurrency.decimals
+  const decimals = net.chain.nativeCurrency.decimals
 
   const funding = useQuery({
-    queryKey: ['pm-funding'],
+    queryKey: ['pm-funding', net.id],
     enabled: !!publicClient && useKey,
     queryFn: quoteFunding,
     staleTime: 20_000,
   })
 
   const resume = useQuery({
-    queryKey: ['pm-current', address],
-    enabled: !!publicClient && !!MATCH_ADDRESS && !!address,
+    queryKey: ['pm-current', net.id, address],
+    enabled: !!publicClient && !!matchAddress && !!address,
     refetchInterval: 5000,
     queryFn: async () => {
-      if (!publicClient || !MATCH_ADDRESS || !address) return null
-      const id = await publicClient.readContract({ address: MATCH_ADDRESS, abi: penaltyMatchAbi, functionName: 'currentMatch', args: [address] })
+      if (!publicClient || !matchAddress || !address) return null
+      const id = await publicClient.readContract({ address: matchAddress, abi: penaltyMatchAbi, functionName: 'currentMatch', args: [address] })
       if (id === 0n) return null
-      const raw = await publicClient.readContract({ address: MATCH_ADDRESS, abi: penaltyMatchAbi, functionName: 'getMatch', args: [id] })
+      const raw = await publicClient.readContract({ address: matchAddress, abi: penaltyMatchAbi, functionName: 'getMatch', args: [id] })
       return { id, status: parseMatch(raw).status }
     },
   })
 
   const room = useQuery({
-    queryKey: ['pm-invite', invite?.id.toString()],
-    enabled: !!publicClient && !!MATCH_ADDRESS && !!invite,
+    queryKey: ['pm-invite', net.id, invite?.id.toString()],
+    enabled: !!publicClient && !!matchAddress && !!invite && !wrongNetwork,
     refetchInterval: 4000,
     queryFn: async () => {
-      if (!publicClient || !MATCH_ADDRESS || !invite) return null
-      const raw = await publicClient.readContract({ address: MATCH_ADDRESS, abi: penaltyMatchAbi, functionName: 'getMatch', args: [invite.id] })
+      if (!publicClient || !matchAddress || !invite) return null
+      const raw = await publicClient.readContract({ address: matchAddress, abi: penaltyMatchAbi, functionName: 'getMatch', args: [invite.id] })
       return parseMatch(raw)
     },
   })
@@ -82,7 +90,7 @@ export function OnlineHome({ invite, onEnter, onBack, challengeTo = null, onChal
     onEnter(id)
   }
 
-  const fundingText = funding.data ? t('online.fundAbout', { amount: n(Number(formatUnits(funding.data, decimals)), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }) : t('online.fundSmall')
+  const fundingText = funding.data ? t('online.fundAbout', { amount: n(Number(formatUnits(funding.data, decimals)), coinFormat(Number(formatUnits(funding.data, decimals)))), token: net.gasSymbol }) : t('online.fundSmall', { token: net.gasSymbol })
   const working = busy !== null
   const roomOpen = room.data?.status === STATUS.Open && !room.data.ranked
   const resumable = resume.data && (resume.data.status === STATUS.Open || resume.data.status === STATUS.Active)
@@ -102,15 +110,31 @@ export function OnlineHome({ invite, onEnter, onBack, challengeTo = null, onChal
         </p>
       </div>
 
-      {!MATCH_ADDRESS && (
-        <div className="panel p-4 text-sm" style={{ color: 'var(--bad)' }}>
-          {t('online.notConfigured')}
+      <div className="flex flex-wrap items-center gap-2">
+        <TestnetBadge />
+        <span className="text-xs text-pretty" style={{ color: 'var(--muted)' }}>
+          {t('net.sameNetwork', { network: net.name })}
+        </span>
+      </div>
+
+      {wrongNetwork && invite?.network && (
+        <div className="panel space-y-2 p-4" style={{ borderColor: 'rgba(255,210,63,0.5)' }} role="alert">
+          <p className="text-sm font-semibold text-pretty">{t('net.inviteOther', { network: NETWORKS[invite.network].name })}</p>
+          <button type="button" className="btn btn-primary" onClick={() => setNetwork(invite.network!)}>
+            {t('net.useNetwork', { network: NETWORKS[invite.network].name })}
+          </button>
         </div>
       )}
 
-      {MATCH_ADDRESS && !isConnected && (
+      {!matchAddress && !wrongNetwork && (
+        <div className="panel p-4 text-sm" style={{ color: 'var(--muted)' }} role="status">
+          {t('net.notAvailable')}
+        </div>
+      )}
+
+      {matchAddress && !wrongNetwork && !isConnected && (
         <div className="panel space-y-3 p-4">
-          <p className="text-sm">{t('online.connectHint')}</p>
+          <p className="text-sm">{t('online.connectHint', { network: net.name, token: net.gasSymbol })}</p>
           <ConnectKitButton.Custom>
             {({ show }) => (
               <button type="button" onClick={show} className="btn btn-primary">
@@ -121,7 +145,7 @@ export function OnlineHome({ invite, onEnter, onBack, challengeTo = null, onChal
         </div>
       )}
 
-      {MATCH_ADDRESS && isConnected && (
+      {matchAddress && !wrongNetwork && isConnected && (
         <>
           {resumable && resume.data && (
             <div className="panel space-y-2 p-4" style={{ borderColor: 'rgba(198,255,61,0.4)' }}>

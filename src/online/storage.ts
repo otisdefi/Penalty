@@ -1,4 +1,5 @@
 import type { Hex } from 'viem'
+import type { NetworkId } from '../networks'
 
 /** Everything this browser must remember to keep playing (or resume) an online match. */
 export interface StoredMatch {
@@ -12,39 +13,43 @@ export interface StoredMatch {
   moves: Record<string, { dir: number; salt: Hex }>
 }
 
-const KEY = 'tb:online:'
-const LAST = 'tb:online:last'
+/**
+ * Match numbers repeat on every network, so what is remembered is kept per network. Arc Testnet keeps the original
+ * key names so a match started before Base Sepolia was added can still be resumed.
+ */
+const keyFor = (net: NetworkId, id: bigint | string) => (net === 'arc' ? 'tb:online:' : `tb:online:${net}:`) + id.toString()
+const lastFor = (net: NetworkId) => (net === 'arc' ? 'tb:online:last' : `tb:online:last:${net}`)
 
-export function loadStored(id: bigint | string): StoredMatch | null {
+export function loadStored(net: NetworkId, id: bigint | string): StoredMatch | null {
   try {
-    const raw = localStorage.getItem(KEY + id.toString())
+    const raw = localStorage.getItem(keyFor(net, id))
     return raw ? (JSON.parse(raw) as StoredMatch) : null
   } catch {
     return null
   }
 }
 
-export function saveStored(s: StoredMatch): void {
+export function saveStored(net: NetworkId, s: StoredMatch): void {
   try {
-    localStorage.setItem(KEY + s.id, JSON.stringify(s))
-    localStorage.setItem(LAST, s.id)
+    localStorage.setItem(keyFor(net, s.id), JSON.stringify(s))
+    localStorage.setItem(lastFor(net), s.id)
   } catch {
     /* storage unavailable: the session still works until the tab closes */
   }
 }
 
-export function loadLastId(): string | null {
+export function loadLastId(net: NetworkId): string | null {
   try {
-    return localStorage.getItem(LAST)
+    return localStorage.getItem(lastFor(net))
   } catch {
     return null
   }
 }
 
-export function clearStored(id: bigint | string): void {
+export function clearStored(net: NetworkId, id: bigint | string): void {
   try {
-    localStorage.removeItem(KEY + id.toString())
-    if (localStorage.getItem(LAST) === id.toString()) localStorage.removeItem(LAST)
+    localStorage.removeItem(keyFor(net, id))
+    if (localStorage.getItem(lastFor(net)) === id.toString()) localStorage.removeItem(lastFor(net))
   } catch {
     /* ignore */
   }

@@ -6,9 +6,12 @@ import { buildShareLink } from '@/lib/share'
 import { useI18n } from '@/i18n'
 import { useAccount } from 'wagmi'
 import { JerseyStep } from '@/cosmetics/JerseyStep'
+import type { NetworkConfig } from '../networks'
 
 interface Props {
   matchId: bigint
+  /** The network the room is on; the share link names it so the friend joins on the same one. */
+  net: NetworkConfig
   m: OnchainMatch
   roomCode?: string
   chainNow: number
@@ -18,7 +21,7 @@ interface Props {
 }
 
 /** Waiting room: a ranked queue search, or a private room with a share link. */
-export function OnlineLobby({ matchId, m, roomCode, chainNow, busy, error, onCancel }: Props) {
+export function OnlineLobby({ matchId, net, m, roomCode, chainNow, busy, error, onCancel }: Props) {
   const { t, n } = useI18n()
   const { address } = useAccount()
   const [link, setLink] = useState<string | null>(null)
@@ -29,11 +32,11 @@ export function OnlineLobby({ matchId, m, roomCode, chainNow, busy, error, onCan
     if (m.ranked || !roomCode) return
     let live = true
     // The room code is a bearer secret, so it travels in the #fragment, never in the path or query.
-    void buildShareLink(`/?match=${matchId.toString()}`).then((url) => live && setLink(`${url}#${roomCode}`))
+    void buildShareLink(`/?match=${matchId.toString()}&net=${net.slug}`).then((url) => live && setLink(`${url}#${roomCode}`))
     return () => {
       live = false
     }
-  }, [m.ranked, matchId, roomCode])
+  }, [m.ranked, matchId, roomCode, net.slug])
 
   const copy = async () => {
     if (!link) return
@@ -62,12 +65,18 @@ export function OnlineLobby({ matchId, m, roomCode, chainNow, busy, error, onCan
           <p className="text-xs text-pretty" style={{ color: 'var(--subtle)' }}>
             {t('lobby.rankedHint')}
           </p>
+          <p className="text-xs text-pretty" style={{ color: 'var(--muted)' }}>
+            {t('net.sameNetwork', { network: net.name })}
+          </p>
         </>
       ) : (
         <>
           <h2 className="display text-3xl font-extrabold">{t('lobby.room', { id: matchId.toString() })}</h2>
           <p className="text-sm text-pretty" style={{ color: 'var(--muted)' }}>
             {t('lobby.sendLink')}
+          </p>
+          <p className="text-xs text-pretty" style={{ color: 'var(--subtle)' }}>
+            {t('net.sameNetwork', { network: net.name })}
           </p>
           {roomCode ? (
             <div className="flex items-center gap-2 rounded-2xl p-2" style={{ background: 'rgba(255,255,255,0.06)' }}>

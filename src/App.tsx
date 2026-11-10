@@ -10,6 +10,8 @@ import { ProfileCardHost } from '@/social/ProfileCard'
 import { appBridge, onSocialEvent } from '@/social/nav'
 import { cancelOutgoing, sendChallenge } from '@/social/challenges'
 import { loadStored } from '@/online/storage'
+import { detectInviteNetwork } from '@/online/detect'
+import { getNetwork, networkBySlug, setNetwork, type NetworkId } from '@/networks'
 import { useT } from '@/i18n'
 import { displayName } from '@/cosmetics/identity'
 import { resolveKits } from '@/cosmetics/kits'
@@ -26,7 +28,7 @@ import { clearPending, type Jersey } from '@/game/storage'
 import { CustomizeScreen } from '@/cosmetics/CustomizeScreen'
 import { useCosmetics } from '@/cosmetics/store'
 import type { StadiumId } from '@/cosmetics/types'
-import { TestnetBadge } from '@/components/TestnetBadge'
+import { NetworkSelector } from '@/components/NetworkSelector'
 import { setMuted } from '@/game/audio'
 import { isMuted, unlockAudio } from '@/lib/whistle'
 import type { Team } from '@/game/logic'
@@ -36,7 +38,7 @@ type Screen =
   | { name: 'onlineHome' }
   | { name: 'customize' }
   | { name: 'profile' }
-  | { name: 'online'; id: bigint; peer?: string }
+  | { name: 'online'; id: bigint; network: NetworkId; peer?: string }
   | { name: 'lobby'; role: 'host' | 'guest'; room: string | null; challengeTo?: string; peer?: string }
   | {
       name: 'match'
@@ -73,10 +75,12 @@ function readInvite(): string | null {
 
 // One remembered mute choice drives both the whistle and the crowd sounds.
 function readOnlineInvite(): Invite | null {
-  const idText = new URLSearchParams(window.location.search).get('match')
+  const params = new URLSearchParams(window.location.search)
+  const idText = params.get('match')
   const code = window.location.hash.slice(1)
   if (!idText || !/^\d{1,18}$/.test(idText) || !isBytes32(code)) return null
-  return { id: BigInt(idText), code }
+  // ?net= names the network; links made before Base Sepolia existed have none and are for Arc Testnet.
+  return { id: BigInt(idText), code, network: networkBySlug(params.get('net'))?.id ?? 'arc' }
 }
 
 setMuted(isMuted())
@@ -125,9 +129,14 @@ function AppScreens() {
       if (c.mode === 'friendly' && isRoomId(c.roomCode)) {
         setScreen({ name: 'lobby', role: 'guest', room: c.roomCode, peer: c.other })
       } else if (c.mode === 'online' && c.matchId !== null && isBytes32(c.roomCode)) {
-        setOnlineInvite({ id: c.matchId, code: c.roomCode })
-        setOnlinePeer(c.other)
-        setScreen({ name: 'onlineHome' })
+        const { matchId, roomCode, other } = c
+        // A challenge does not name the network, so look for the one where this room is open with this code.
+        void detectInviteNetwork(matchId, roomCode).then((found) => {
+          if (found) setNetwork(found)
+          setOnlineInvite({ id: matchId, code: roomCode, network: found ?? undefined })
+          setOnlinePeer(other)
+          setScreen({ name: 'onlineHome' })
+        })
       }
     }
   })
@@ -216,7 +225,7 @@ function AppScreens() {
   }
 
   if (screen.name === 'online') {
-    return <OnlineMatchScreen key={screen.id.toString()} matchId={screen.id} peerUsername={screen.peer} onExit={() => setScreen({ name: 'onlineHome' })} />
+    return <OnlineMatchScreen key={`${screen.network}-${screen.id.toString()}`} matchId={screen.id} network={screen.network} peerUsername={screen.peer} onExit={() => setScreen({ name: 'onlineHome' })} />
   }
 
   if (screen.name === 'match') {
@@ -242,7 +251,7 @@ function AppScreens() {
     <div className="relative min-h-dvh overflow-hidden" style={{ background: 'radial-gradient(120% 80% at 50% -10%, #12306b 0%, #060d1f 60%)' }}>
       <div className="relative z-10 mx-auto max-w-5xl px-4 pb-12 pt-4">
         <header className="mb-6 flex items-center justify-between">
-          <TestnetBadge />
+          <NetworkSelector />
           <div className="flex items-center gap-2">
           <LanguageButton />
           <AccountChip />
@@ -262,14 +271,14 @@ function AppScreens() {
             onEnter={(id) => {
               setOnlineInvite(null)
               if (window.location.search || window.location.hash) window.history.replaceState(null, '', window.location.pathname)
-              setScreen({ name: 'online', id, peer: onlinePeer ?? undefined })
+              setScreen({ name: 'online', id, network: getNetwork().id, peer: onlinePeer ?? undefined })
               setOnlinePeer(null)
             }}
             onBack={leaveOnline}
             challengeTo={challengeTo}
             onChallengeRoom={async (id) => {
               // The room is made; now send the invite with its code.
-              const code = loadStored(id)?.roomCode
+              const code = loadStored(getNetwork().id, id)?.roomCode
               if (challengeTo && code) await sendChallenge(challengeTo, 'online', code, id)
               setChallengeTo(null)
             }}

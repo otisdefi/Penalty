@@ -6,7 +6,8 @@ import { createWalletClient, encodeFunctionData, http } from 'viem'
 import type { Hex } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { penaltyMatchAbi } from './abi'
-import { MATCH_ADDRESS, ONLINE_CHAIN, ONLINE_CHAIN_ID, GAS_PER_TX } from './config'
+import { GAS_PER_TX } from './config'
+import type { NetworkConfig } from '../networks'
 import {
   PHASE,
   STATUS,
@@ -64,13 +65,14 @@ const REVEAL_ANIM_MS = 1900
 /** Wait a little past the deadline so the chain clock is certainly beyond it. */
 const CLAIM_MARGIN_S = 1
 
-export function useOnlineMatch(matchId: bigint) {
+export function useOnlineMatch(matchId: bigint, net: NetworkConfig) {
+  const matchAddress = net.matchAddress
   const { address, chainId } = useAccount()
-  const publicClient = usePublicClient({ chainId: ONLINE_CHAIN_ID })
+  const publicClient = usePublicClient({ chainId: net.chainId })
   const { sendTransactionAsync } = useSendTransaction()
   const { switchChainAsync } = useSwitchChain()
 
-  const [stored, setStored] = useState<StoredMatch | null>(() => loadStored(matchId))
+  const [stored, setStored] = useState<StoredMatch | null>(() => loadStored(net.id, matchId))
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [localPick, setLocalPick] = useState<{ kick: number; dir: Dir } | null>(null)
@@ -84,18 +86,18 @@ export function useOnlineMatch(matchId: bigint) {
   const sessionKey = stored?.sessionKey
   const sessionAccount = useMemo(() => (sessionKey ? privateKeyToAccount(sessionKey) : null), [sessionKey])
   const sessionWallet = useMemo(
-    () => (sessionAccount ? createWalletClient({ account: sessionAccount, chain: ONLINE_CHAIN, transport: http() }) : null),
-    [sessionAccount],
+    () => (sessionAccount ? createWalletClient({ account: sessionAccount, chain: net.chain, transport: http() }) : null),
+    [sessionAccount, net.chain],
   )
 
   const matchQuery = useQuery({
     queryKey: ['pm-match', matchId.toString()],
-    enabled: !!publicClient && !!MATCH_ADDRESS,
+    enabled: !!publicClient && !!matchAddress,
     refetchInterval: 1500,
     queryFn: async () => {
-      if (!publicClient || !MATCH_ADDRESS) throw new Error('not ready')
+      if (!publicClient || !matchAddress) throw new Error('not ready')
       const [raw, block] = await Promise.all([
-        publicClient.readContract({ address: MATCH_ADDRESS, abi: penaltyMatchAbi, functionName: 'getMatch', args: [matchId] }),
+        publicClient.readContract({ address: matchAddress, abi: penaltyMatchAbi, functionName: 'getMatch', args: [matchId] }),
         publicClient.getBlock(),
       ])
       return {
@@ -166,23 +168,23 @@ export function useOnlineMatch(matchId: bigint) {
 
   const send = useCallback(
     async (call: Call): Promise<void> => {
-      if (!publicClient || !MATCH_ADDRESS) throw new Error('Online play is not configured.')
+      if (!publicClient || !matchAddress) throw new Error('Online play is not configured.')
       const data = calldata(call)
       const canUseKey = usingKey && sessionWallet && sessionAccount
       let hash: Hex
       if (canUseKey) {
-        const gas = padGas(await publicClient.estimateGas({ account: sessionAccount, to: MATCH_ADDRESS, data }))
-        hash = await sessionWallet.sendTransaction({ account: sessionAccount, chain: ONLINE_CHAIN, to: MATCH_ADDRESS, data, gas })
+        const gas = padGas(await publicClient.estimateGas({ account: sessionAccount, to: matchAddress, data }))
+        hash = await sessionWallet.sendTransaction({ account: sessionAccount, chain: net.chain, to: matchAddress, data, gas })
       } else {
-        if (chainId !== ONLINE_CHAIN_ID) await switchChainAsync({ chainId: ONLINE_CHAIN_ID })
-        const gas = address ? padGas(await publicClient.estimateGas({ account: address, to: MATCH_ADDRESS, data })) : undefined
-        hash = await sendTransactionAsync({ to: MATCH_ADDRESS, data, chainId: ONLINE_CHAIN_ID, gas })
+        if (chainId !== net.chainId) await switchChainAsync({ chainId: net.chainId })
+        const gas = address ? padGas(await publicClient.estimateGas({ account: address, to: matchAddress, data })) : undefined
+        hash = await sendTransactionAsync({ to: matchAddress, data, chainId: net.chainId, gas })
       }
       const receipt = await publicClient.waitForTransactionReceipt({ hash })
       if (receipt.status !== 'success') throw new Error('reverted')
       await matchQuery.refetch()
     },
-    [address, chainId, matchQuery, publicClient, sendTransactionAsync, sessionAccount, sessionWallet, switchChainAsync, usingKey],
+    [address, chainId, matchQuery, publicClient, sendTransactionAsync, sessionAccount, sessionWallet, switchChainAsync, usingKey, net.chain, net.chainId, matchAddress],
   )
 
   const run = useCallback(async (label: string, call: Call, onFail?: () => void) => {
@@ -212,13 +214,13 @@ export function useOnlineMatch(matchId: bigint) {
         roomCode: stored?.roomCode,
         moves: { ...(stored?.moves ?? {}), [String(kick)]: { dir, salt } },
       }
-      saveStored(next)
+      saveStored(net.id, next)
       setStored(next)
       setLocalPick({ kick, dir })
       sfx.pick()
       await run('commit', { fn: 'commit', args: [matchId, commitHash(matchId, kick, address, dir, salt)] }, () => setLocalPick(null))
     },
-    [address, busy, m, matchId, mySeat, run, stored],
+    [address, busy, m, matchId, mySeat, run, stored, net.id],
   )
 
   const reveal = useCallback(async () => {
@@ -286,7 +288,7 @@ export function useOnlineMatch(matchId: bigint) {
       const gasPrice = await publicClient.getGasPrice()
       const value = keyBalance - gasPrice * 21_000n * 3n
       if (value <= 0n) return
-      const hash = await sessionWallet.sendTransaction({ account: sessionAccount, chain: ONLINE_CHAIN, to: address, value })
+      const hash = await sessionWallet.sendTransaction({ account: sessionAccount, chain: net.chain, to: address, value })
       await publicClient.waitForTransactionReceipt({ hash })
       await keyQuery.refetch()
     } catch (e) {
@@ -294,7 +296,7 @@ export function useOnlineMatch(matchId: bigint) {
     } finally {
       setBusy(null)
     }
-  }, [address, keyBalance, keyQuery, publicClient, sessionAccount, sessionWallet])
+  }, [address, keyBalance, keyQuery, publicClient, sessionAccount, sessionWallet, net.chain])
 
   const shooterTeam: Team = (m?.kicks ?? 0) % 2 === 0 ? 'red' : 'blue'
   const iShootNow = shooterTeam === myTeam

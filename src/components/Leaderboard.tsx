@@ -1,6 +1,7 @@
 import { useAccount, useReadContract } from 'wagmi'
 import { Flame, Trophy } from 'lucide-react'
-import { LEADERBOARD_ADDRESS, LEADERBOARD_CHAIN_ID, leaderboardAbi } from '@/contract'
+import { leaderboardAbi } from '@/contract'
+import { useNetwork } from '@/networks'
 import { shortAddress } from '@/lib/errors'
 import { useI18n } from '@/i18n'
 
@@ -19,14 +20,15 @@ function Stat({ label, value }: { label: string; value: number | string }) {
 
 function MyRecord() {
   const { t, n } = useI18n()
+  const net = useNetwork()
   const { address } = useAccount()
   const { data, isLoading } = useReadContract({
-    address: LEADERBOARD_ADDRESS,
+    address: net.leaderboardAddress,
     abi: leaderboardAbi,
     functionName: 'getRecord',
     args: address ? [address] : undefined,
-    chainId: LEADERBOARD_CHAIN_ID,
-    query: { enabled: !!address },
+    chainId: net.chainId,
+    query: { enabled: !!address && !!net.leaderboardAddress },
   })
   if (!address) {
     return (
@@ -49,13 +51,14 @@ function MyRecord() {
 
 export function Leaderboard() {
   const { t, n } = useI18n()
+  const net = useNetwork()
   const { address } = useAccount()
   const { data, isLoading, isError, refetch } = useReadContract({
-    address: LEADERBOARD_ADDRESS,
+    address: net.leaderboardAddress,
     abi: leaderboardAbi,
     functionName: 'getTopTen',
-    chainId: LEADERBOARD_CHAIN_ID,
-    query: { refetchInterval: 10_000 },
+    chainId: net.chainId,
+    query: { refetchInterval: 10_000, enabled: !!net.leaderboardAddress },
   })
 
   const rows = data
@@ -72,10 +75,16 @@ export function Leaderboard() {
           <h2 className="display text-2xl font-extrabold">{t('lb.title')}</h2>
         </div>
         <span className="text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--muted)' }}>
-          {t('lb.rankedBy')}
+          {net.name}
         </span>
       </div>
 
+      {!net.leaderboardAddress ? (
+        <p className="py-6 text-center text-sm text-pretty" style={{ color: 'var(--muted)' }} role="status">
+          {t('net.notAvailable')}
+        </p>
+      ) : (
+        <>
       <MyRecord />
 
       {isLoading && (
@@ -134,8 +143,10 @@ export function Leaderboard() {
         </ol>
       )}
       <p className="text-xs text-pretty" style={{ color: 'var(--subtle)' }}>
-        {t('lb.note')}
+        {t('lb.note', { network: net.name })}
       </p>
+        </>
+      )}
     </section>
   )
 }

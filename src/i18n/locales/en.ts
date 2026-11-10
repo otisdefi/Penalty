@@ -18,7 +18,6 @@ const messages = {
   'common.viewTx': 'View transaction',
   'lang.change': 'Change language',
   'lang.title': 'Language',
-  'badge.testnet': 'Arc Testnet',
   'app.connect': 'Connect wallet',
 
   // rivals
@@ -28,7 +27,7 @@ const messages = {
 
   // home menu
   'menu.kicker': 'Penalty shootout',
-  'menu.tagline': 'Best of five. Outguess the keeper, then save your result to the Arc Testnet table.',
+  'menu.tagline': "Best of five. Outguess the keeper, then save your result to the {network} table.",
   'menu.yourShirt': 'Your shirt',
   'menu.number': 'No. {n}',
   'menu.customize': 'Customize shirt, ball and stadium',
@@ -55,12 +54,12 @@ const messages = {
   'lb.loading': 'Loading the table...',
   'lb.error': 'Could not load the leaderboard.',
   'lb.empty': 'Nobody has saved a win yet. Win a ranked match and save it to take first place.',
-  'lb.note': 'Each wallet reports its own ranked results on Arc Testnet, so the table is for bragging rights, not prizes.',
+  'lb.note': "Each wallet reports its own ranked results on {network}, so the table is for bragging rights, not prizes.",
 
   // saving a ranked result
   'save.switching': 'Switching network...',
   'save.confirm': 'Confirm in your wallet...',
-  'save.saving': 'Saving to Arc Testnet...',
+  'save.saving': "Saving to {network}...",
   'save.saveWin': 'Save win to leaderboard',
   'save.saveLoss': 'Save loss to leaderboard',
   'save.saved': 'Result saved to the leaderboard.',
@@ -71,7 +70,7 @@ const messages = {
 
   // wallet and network errors
   'err.cancelled': 'Transaction cancelled.',
-  'err.noGas': 'Not enough USDC for gas. Use Get test USDC in the sidebar, then try again.',
+  'err.noGas': "Not enough {token} for gas.",
   'err.recordFull': 'This record is full and cannot take another result.',
   'err.reverted': 'The transaction was rejected by the contract.',
   'err.network': 'Network issue. Check your connection and try again.',
@@ -230,7 +229,7 @@ const messages = {
   'online.intro': 'Every kick is a hidden, committed move that both players reveal, so neither side can cheat. {s} seconds per step; a player who stalls forfeits.',
   'online.notConfigured': 'Online play is not configured. Set VITE_MATCH_ADDRESS to the PenaltyMatch contract address.',
   'online.notConfiguredShort': 'Online play is not configured.',
-  'online.connectHint': 'Connect a wallet with some Arc Testnet USDC to play. Gas is paid in USDC.',
+  'online.connectHint': "Connect a wallet with some {network} {token} to play. Gas is paid in {token}.",
   'online.resumeOpen': 'You have an open room (#{id}).',
   'online.resumeActive': 'You have a match in progress (#{id}).',
   'online.resume': 'Resume match',
@@ -243,8 +242,8 @@ const messages = {
   'online.helperKey': 'Sign once with a helper key',
   'online.helperOn': 'Your wallet sends {amount} to a one-time key stored in this browser. It signs your moves automatically, and you can return the leftover after the match.',
   'online.helperOff': 'Your wallet will ask you to confirm every commit and reveal (two prompts per kick).',
-  'online.fundAbout': 'about {amount} USDC',
-  'online.fundSmall': 'a small amount of USDC',
+  'online.fundAbout': "about {amount} {token}",
+  'online.fundSmall': "a small amount of {token}",
   'online.entering': 'Entering the queue...',
   'online.quick': 'Quick match (ranked)',
   'online.creating': 'Creating room...',
@@ -286,7 +285,7 @@ const messages = {
   'online.settledNote': 'Settled by the shootout.',
   'online.record': 'Your verified record: {w} wins, {l} losses, streak {s} (best {b})',
   'online.viewFinal': 'View final transaction',
-  'online.sweep': 'Return {amount} USDC from the helper key',
+  'online.sweep': "Return {amount} {token} from the helper key",
   'online.backMenu': 'Back to online menu',
   'lobby.finding': 'Finding an opponent',
   'lobby.searching': 'Searching... {s}s left',
@@ -547,6 +546,19 @@ const messages = {
   'avatar.img.tooLarge': "The picture is too large. Try a smaller one.",
   'avatar.img.noCanvas': "Your browser can not process pictures.",
   'avatar.img.encodeFailed': "The picture could not be prepared. Try another one.",
+  'net.title': "Network",
+  'net.change': "Change network",
+  'net.gas': "Gas is paid in {token}",
+  'net.notAvailable': "Not available on this network yet",
+  'net.faucet.arc': "Get free test USDC with \"Get test USDC\" in the sidebar, then try again.",
+  'net.faucet.baseSepolia': "Get free test ETH from a Base Sepolia faucet (for example the Coinbase Developer Platform faucet), then try again.",
+  'net.walletElsewhere': "Your wallet is on a different network.",
+  'net.switchWallet': "Switch wallet to {network}",
+  'net.switchFailed': "The wallet did not switch. Open your wallet and choose the network by hand.",
+  'net.separate': "Leaderboards and online matches are separate on each network.",
+  'net.sameNetwork': "Both players must be on {network} for this match.",
+  'net.inviteOther': "This match is on {network}.",
+  'net.useNetwork': "Use {network}",
 } as const
 
 export default { code: 'en', name: 'English', messages }

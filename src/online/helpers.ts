@@ -10,6 +10,7 @@ export interface OnchainMatch {
   p2: `0x${string}`
   key1: `0x${string}`
   key2: `0x${string}`
+  codeHash: Hex
   commit1: Hex
   commit2: Hex
   revealed1: boolean
@@ -42,6 +43,7 @@ export function parseMatch(r: {
   p2: `0x${string}`
   key1: `0x${string}`
   key2: `0x${string}`
+  codeHash: Hex
   commit1: Hex
   commit2: Hex
   revealed1: boolean

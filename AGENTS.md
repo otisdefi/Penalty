@@ -96,3 +96,10 @@ bun run dev
 - SQL: `supabase/avatars/` (five parts, run in order after the profiles and challenges SQL), `avatars_checks.sql` for read-only checks, and the `purge-avatars` Edge Function in `supabase/functions/purge-avatars/` (deletes rejected or removed files through the Storage API).
 - App: `src/avatar/` (`processImage.ts` checks and crops, `api.ts` database and storage calls, `store.ts` shared cache, `Avatar.tsx` round picture or generated default, `AvatarUpload.tsx` upload screen in My profile).
 - Rules live in the database and storage policies: private bucket, one file per player named by user id, WebP or JPEG up to 512 KB, 3 uploads a day, pending until approved, hidden after 3 reports.
+
+## Networks
+
+- `src/networks.ts` is the one place that knows the test networks (Arc Testnet and Base Sepolia): chain, gas coin, explorer, faucet hint, and the contract addresses read from `VITE_*_ARC` and `VITE_*_BASE_SEPOLIA` (Arc falls back to the deployed addresses, Base Sepolia has none until configured). Only testnets are listed on purpose.
+- The selected network is remembered in the browser (`tb:network`) and can come from a share link (`?net=`). Components call `useNetwork()`; code that must not follow later changes (an open online match) takes the network as an argument.
+- Per-network data: leaderboards (separate contracts), remembered online matches (`src/online/storage.ts` keys), the match chat channel (`matchChannel`). Match links carry `&net=`; a challenge invite is matched to its network by `src/online/detect.ts`.
+

@@ -1,4 +1,5 @@
 import { translate } from '@/i18n'
+import { getNetwork } from '@/networks'
 
 export function isUserRejection(error: unknown): boolean {
   const e = error as { code?: number; message?: string; shortMessage?: string } | null
@@ -11,7 +12,9 @@ export function parseOnchainError(error: unknown): string {
   const text = `${e?.shortMessage ?? ''} ${e?.message ?? ''}`.toLowerCase()
   if (isUserRejection(error)) return translate('err.cancelled')
   if (text.includes('insufficient funds') || text.includes('exceeds balance')) {
-    return translate('err.noGas')
+    // Say which coin pays for gas on the selected network and where to get free test coins.
+    const net = getNetwork()
+    return `${translate('err.noGas', { token: net.gasSymbol })} ${translate(net.faucetHint)}`
   }
   if (text.includes('overflow')) return translate('err.recordFull')
   if (text.includes('reverted')) return translate('err.reverted')
