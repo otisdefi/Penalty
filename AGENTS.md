@@ -103,3 +103,8 @@ bun run dev
 - The selected network is remembered in the browser (`tb:network`) and can come from a share link (`?net=`). Components call `useNetwork()`; code that must not follow later changes (an open online match) takes the network as an argument.
 - Per-network data: leaderboards (separate contracts), remembered online matches (`src/online/storage.ts` keys), the match chat channel (`matchChannel`). Match links carry `&net=`; a challenge invite is matched to its network by `src/online/detect.ts`.
 
+## Automatic picture checks
+
+- `supabase/functions/check-avatar` (Verify JWT on) reads a picture with the service role, asks the moderation services named in the `MODERATION_PROVIDER` secret (sightengine, openai, azure; strictest answer wins) and applies the verdict through `moderation_claim` / `moderation_decide` (service role only, `supabase/avatars/moderation_part*_of_2.sql`). Keys are Edge Function secrets, never in the repo or the app.
+- The app calls it through `checkAvatar()` in `src/avatar/api.ts` after an upload and after a picture report. Anything unclear or failing leaves the picture pending for the manual review in `admin_pending_pictures`.
+

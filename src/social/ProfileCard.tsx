@@ -1,6 +1,6 @@
 import { Avatar } from '../avatar/Avatar'
-import { reportAvatar } from '../avatar/api'
-import { useAvatarEntry } from '../avatar/store'
+import { checkAvatar, reportAvatar } from '../avatar/api'
+import { refreshAvatar, useAvatarEntry } from '../avatar/store'
 import { useCallback, useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { Ban, Flag, Loader2, Swords, VolumeX, Volume2, X } from 'lucide-react'
@@ -122,8 +122,12 @@ export function ProfileCardHost() {
     setMessage(null)
     const result = await reportAvatar(profile.username)
     setBusy(null)
-    if (result.ok) setPictureReported(true)
-    else setMessage(result.error)
+    if (result.ok) {
+      setPictureReported(true)
+      // Any report on an approved picture triggers a fresh safety check (a flagged picture is removed, an unsure one is hidden).
+      const name = profile.username
+      void checkAvatar('report', name).then(() => refreshAvatar(name))
+    } else setMessage(result.error)
   }
 
   const report = async () => {

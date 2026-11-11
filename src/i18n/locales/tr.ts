@@ -550,6 +550,11 @@ const tr: Locale = {
     'net.inviteOther': "Bu maç {network} ağında.",
     'net.useNetwork': "{network} ağını kullan",
     'avatar.details': "Ayrıntılar",
+    'avatar.err.accountNew': "Fotoğraf, hesabını açtıktan 24 saat sonra eklenebilir.",
+    'avatar.checking': "Fotoğrafın kontrol ediliyor...",
+    'avatar.approvedNow': "Onaylandı. Diğer oyuncular görebilir.",
+    'avatar.rejectedNow': "Bu fotoğraf kabul edilmedi. Lütfen başka bir tane seç.",
+    'avatar.autoCheck': "Fotoğraflar, diğerleri görmeden önce bir güvenlik servisi tarafından otomatik kontrol edilir. Kontrol emin değilse bir kişi bakar.",
   },
 }
 

@@ -37,6 +37,7 @@ export function avatarErrorKey(err: unknown): MessageKey {
   const message = typeof raw === 'string' ? raw : ''
   if (/not_signed_in/.test(message)) return 'social.err.signin'
   if (/avatar_banned/.test(message)) return 'avatar.err.banned'
+  if (/avatar_account_new/.test(message)) return 'avatar.err.accountNew'
   if (/avatar_limit_day/.test(message)) return 'avatar.err.limitDay'
   if (/avatar_rate\b/.test(message)) return 'avatar.err.rate'
   if (/avatar_report_rate/.test(message)) return 'social.err.reportRate'
@@ -177,6 +178,28 @@ export async function uploadAvatar(userId: string, blob: Blob, contentType: 'ima
     return { ok: true }
   } catch (e) {
     return fail('upload', avatarErrorKey(e), e)
+  }
+}
+
+export type CheckResult = 'approved' | 'rejected' | 'held' | 'kept' | 'manual' | 'stale' | 'other'
+const CHECK_RESULTS: CheckResult[] = ['approved', 'rejected', 'held', 'kept', 'manual', 'stale']
+
+/**
+ * Asks the check-avatar Edge Function (Verify JWT on, so it runs as the signed-in player) to check a picture:
+ * 'upload' = my own new picture, 'report' = the approved picture of a player I just reported.
+ * Returns what was decided, or null when the function could not be reached; the picture then simply stays
+ * pending ("Waiting for review") until you look at it. No key is used here: the function holds the secrets.
+ */
+export async function checkAvatar(mode: 'upload' | 'report' = 'upload', username?: string): Promise<CheckResult | null> {
+  if (!CHAT_CONFIGURED) return null
+  try {
+    const sb = await getSupabase()
+    const res = (await sb.functions.invoke('check-avatar', { body: mode === 'report' ? { mode, username } : { mode } })) as { data: unknown; error: unknown }
+    if (res.error || !isRecord(res.data)) return null
+    const result = res.data.result
+    return CHECK_RESULTS.find((r) => r === result) ?? 'other'
+  } catch {
+    return null
   }
 }
 

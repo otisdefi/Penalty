@@ -3,7 +3,7 @@ import { useI18n } from '@/i18n'
 import type { MessageKey } from '@/i18n/types'
 import { useAuth } from '../chat/account'
 import { Avatar } from './Avatar'
-import { removeMyAvatar, uploadAvatar } from './api'
+import { checkAvatar, removeMyAvatar, uploadAvatar } from './api'
 import { DEFAULT_CROP, MAX_INPUT_BYTES, drawSquare, encodeAvatar, inspectFile, type Crop, type ImageError, type Inspected } from './processImage'
 import { refreshAvatar, useAvatarEntry } from './store'
 
@@ -87,8 +87,13 @@ export function AvatarUpload() {
         return
       }
       setPicked(null)
-      setNotice({ kind: 'ok', key: 'avatar.saved' })
+      // The picture is pending (only you can see it). The safety check decides at once when it is clearly fine or clearly not.
+      setNotice({ kind: 'ok', key: 'avatar.checking' })
+      const checked = await checkAvatar('upload')
       refreshAvatar(user.username)
+      if (checked === 'approved') setNotice({ kind: 'ok', key: 'avatar.approvedNow' })
+      else if (checked === 'rejected') setNotice({ kind: 'err', key: 'avatar.rejectedNow' })
+      else setNotice({ kind: 'ok', key: 'avatar.saved' })
     } finally {
       setBusy(null)
     }
@@ -204,6 +209,9 @@ export function AvatarUpload() {
 
       <p className="break-words text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
         {t('avatar.rules')}
+      </p>
+      <p className="break-words text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
+        {t('avatar.autoCheck')}
       </p>
       <p className="break-words text-[11px] leading-relaxed" style={{ color: 'var(--muted)' }}>
         {t('avatar.howItWorks', { mb: MAX_INPUT_BYTES / (1024 * 1024) })}

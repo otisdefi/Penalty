@@ -550,6 +550,11 @@ const pt: Locale = {
     'net.inviteOther': "Esta partida está na {network}.",
     'net.useNetwork': "Usar {network}",
     'avatar.details': "Detalhes",
+    'avatar.err.accountNew': "Você pode adicionar uma foto 24 horas após criar a conta.",
+    'avatar.checking': "Verificando sua foto...",
+    'avatar.approvedNow': "Aprovada. Os outros jogadores podem ver.",
+    'avatar.rejectedNow': "Esta foto não foi aceita. Escolha outra, por favor.",
+    'avatar.autoCheck': "Um serviço de segurança verifica as fotos automaticamente antes que outros as vejam. Se houver dúvida, uma pessoa analisa.",
   },
 }
 

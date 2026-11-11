@@ -560,6 +560,11 @@ const messages = {
   'net.inviteOther': "This match is on {network}.",
   'net.useNetwork': "Use {network}",
   'avatar.details': "Details",
+  'avatar.err.accountNew': "Pictures can be added 24 hours after you create your account.",
+  'avatar.checking': "Checking your picture...",
+  'avatar.approvedNow': "Approved. Other players can see it.",
+  'avatar.rejectedNow': "This picture was not accepted. Please choose a different one.",
+  'avatar.autoCheck': "Pictures are checked automatically by a safety service before others can see them. If the check is unsure, a person looks at it.",
 } as const
 
 export default { code: 'en', name: 'English', messages }

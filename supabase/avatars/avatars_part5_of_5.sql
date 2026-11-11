@@ -17,6 +17,24 @@ end $$;
 --   select public.admin_remove_picture('somename');          -- same, and back to the default avatar
 -- To look at a picture: Storage > avatars > the file named like storage_path in the view.
 -- ---------------------------------------------------------------------------
+-- The last automatic check of a picture, as one line for the review list. Works before the check log exists (then null),
+-- so the review list is the same whichever file was run last.
+create or replace function public.avatar_last_check(p_user uuid, p_version bigint) returns text
+language plpgsql stable security definer set search_path = public
+as $$
+declare r text;
+begin
+  if to_regclass('public.avatar_moderation_log') is null then return null; end if;
+  execute $q$ select l.verdict || ' / ' || l.decision || coalesce(': ' || l.reasons, '')
+                from public.avatar_moderation_log l
+               where l.user_id = $1 and l.avatar_version is not distinct from $2
+               order by l.id desc limit 1 $q$ into r using p_user, p_version;
+  return r;
+end
+$$;
+revoke execute on function public.avatar_last_check(uuid, bigint) from public, anon, authenticated;
+grant execute on function public.avatar_last_check(uuid, bigint) to service_role;
+
 create or replace view public.admin_pending_pictures as
   select p.username,
          p.avatar_status,
@@ -25,7 +43,8 @@ create or replace view public.admin_pending_pictures as
          (select count(*) from public.avatar_reports r
            where r.target_id = p.id and r.created_at > coalesce(p.avatar_reviewed_at, '-infinity')) as reports,
          p.id::text as storage_path,
-         p.banned
+         p.banned,
+         public.avatar_last_check(p.id, p.avatar_version) as last_check
     from public.profiles p
    where p.avatar_status = 'pending' and p.avatar_uploaded_at is not null
    order by p.avatar_uploaded_at;
