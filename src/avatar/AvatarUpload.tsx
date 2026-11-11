@@ -210,6 +210,7 @@ export function AvatarUpload() {
       <p className="break-words text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
         {t('avatar.rules')}
       </p>
+      <p className="break-words text-xs font-semibold leading-relaxed">{t('avatar.privacy')}</p>
       <p className="break-words text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
         {t('avatar.autoCheck')}
       </p>

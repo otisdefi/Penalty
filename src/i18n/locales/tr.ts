@@ -343,6 +343,7 @@ const tr: Locale = {
     'auth.privacy.public': 'Sohbet mesajları diğer oyunculara açıktır.',
     'auth.privacy.password': 'Şifren Supabase Auth tarafından işlenir ve şifrelenmiş (hash) olarak saklanır.',
     'auth.privacy.delete': 'Hesabını ve mesajlarını istediğin zaman Hesap bölümünden silebilirsin.',
+    'auth.privacy.picture': "Profil fotoğrafları otomatik bir görsel güvenlik kontrol servisine gönderilir.",
     'auth.recovery.created': 'Hesap oluşturuldu. İşte kurtarma kodun.',
     'auth.recovery.warning': 'Bu kodu kaydet. Kodsuz, kaybolan şifre kurtarılamaz.',
     'auth.recovery.once': 'Yalnızca bir kez gösterilir.',
@@ -555,6 +556,7 @@ const tr: Locale = {
     'avatar.approvedNow': "Onaylandı. Diğer oyuncular görebilir.",
     'avatar.rejectedNow': "Bu fotoğraf kabul edilmedi. Lütfen başka bir tane seç.",
     'avatar.autoCheck': "Fotoğraflar, diğerleri görmeden önce bir güvenlik servisi tarafından otomatik kontrol edilir. Kontrol emin değilse bir kişi bakar.",
+    'avatar.privacy': "Gizlilik: fotoğrafın otomatik bir görsel güvenlik kontrol servisine gönderilir.",
   },
 }
 

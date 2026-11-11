@@ -73,6 +73,7 @@ function PrivacyNote() {
         <li>{t('auth.privacy.public')}</li>
         <li>{t('auth.privacy.password')}</li>
         <li>{t('auth.privacy.delete')}</li>
+        <li>{t('auth.privacy.picture')}</li>
       </ul>
     </div>
   )

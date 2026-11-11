@@ -343,6 +343,7 @@ const es: Locale = {
     'auth.privacy.public': 'Los mensajes del chat son públicos para los demás jugadores.',
     'auth.privacy.password': 'Supabase Auth gestiona tu contraseña y la guarda cifrada (hash).',
     'auth.privacy.delete': 'Puedes borrar tu cuenta y tus mensajes cuando quieras en Cuenta.',
+    'auth.privacy.picture': "Las fotos de perfil se envían a un servicio automático de comprobación de seguridad de imágenes.",
     'auth.recovery.created': 'Cuenta creada. Este es tu código de recuperación.',
     'auth.recovery.warning': 'Guarda este código. Sin él, una contraseña perdida no se puede recuperar.',
     'auth.recovery.once': 'Solo se muestra una vez.',
@@ -555,6 +556,7 @@ const es: Locale = {
     'avatar.approvedNow': "Aprobada. Los demás jugadores pueden verla.",
     'avatar.rejectedNow': "Esta foto no fue aceptada. Elige otra, por favor.",
     'avatar.autoCheck': "Un servicio de seguridad comprueba las fotos automáticamente antes de que otros las vean. Si no está seguro, la revisa una persona.",
+    'avatar.privacy': "Privacidad: tu foto se envía a un servicio automático de comprobación de seguridad de imágenes.",
   },
 }
 

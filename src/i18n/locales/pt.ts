@@ -343,6 +343,7 @@ const pt: Locale = {
     'auth.privacy.public': 'As mensagens do chat são públicas para os outros jogadores.',
     'auth.privacy.password': 'Sua senha é tratada pelo Supabase Auth e guardada com hash.',
     'auth.privacy.delete': 'Você pode excluir sua conta e suas mensagens quando quiser em Conta.',
+    'auth.privacy.picture': "As fotos de perfil são enviadas a um serviço automático de verificação de segurança de imagens.",
     'auth.recovery.created': 'Conta criada. Este é seu código de recuperação.',
     'auth.recovery.warning': 'Guarde este código. Sem ele, uma senha perdida não pode ser recuperada.',
     'auth.recovery.once': 'Ele aparece só uma vez.',
@@ -555,6 +556,7 @@ const pt: Locale = {
     'avatar.approvedNow': "Aprovada. Os outros jogadores podem ver.",
     'avatar.rejectedNow': "Esta foto não foi aceita. Escolha outra, por favor.",
     'avatar.autoCheck': "Um serviço de segurança verifica as fotos automaticamente antes que outros as vejam. Se houver dúvida, uma pessoa analisa.",
+    'avatar.privacy': "Privacidade: sua foto é enviada a um serviço automático de verificação de segurança de imagens.",
   },
 }
 

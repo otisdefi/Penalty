@@ -353,6 +353,7 @@ const messages = {
   'auth.privacy.public': 'Chat messages are public to other players.',
   'auth.privacy.password': 'Your password is handled by Supabase Auth and stored hashed.',
   'auth.privacy.delete': 'You can delete your account and messages any time in Account.',
+  'auth.privacy.picture': "Profile pictures are sent to an automated image safety check service.",
   'auth.recovery.created': 'Account created. Here is your recovery code.',
   'auth.recovery.warning': 'Save this code. Without it, a lost password cannot be recovered.',
   'auth.recovery.once': 'It is shown only once.',
@@ -565,6 +566,7 @@ const messages = {
   'avatar.approvedNow': "Approved. Other players can see it.",
   'avatar.rejectedNow': "This picture was not accepted. Please choose a different one.",
   'avatar.autoCheck': "Pictures are checked automatically by a safety service before others can see them. If the check is unsure, a person looks at it.",
+  'avatar.privacy': "Privacy: your picture is sent to an automated image safety check service.",
 } as const
 
 export default { code: 'en', name: 'English', messages }
