@@ -9,7 +9,7 @@ begin
   end if;
 end $$;
 
--- Step 1 of an upload. Refuses banned players and a 4th upload in 24 hours, then hands out a 2 minute ticket.
+-- Step 1 of an upload. Refuses banned players, accounts younger than 24 hours and a 4th upload in 24 hours, then hands out a 2 minute ticket.
 -- An approved picture becomes pending here, so a new file can never be public before you have looked at it.
 create or replace function public.request_avatar_upload() returns void
 language plpgsql security definer set search_path = public
@@ -23,6 +23,7 @@ begin
   select * into prof from public.profiles where id = me;
   if prof.id is null then raise exception 'avatar_no_profile'; end if;
   if prof.banned then raise exception 'avatar_banned'; end if;
+  if prof.created_at > now() - interval '24 hours' then raise exception 'avatar_account_new'; end if; -- accounts must be 24 hours old
   if exists (select 1 from public.avatar_uploads where user_id = me and created_at > now() - interval '10 seconds') then
     raise exception 'avatar_rate';
   end if;
