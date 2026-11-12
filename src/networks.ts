@@ -34,6 +34,8 @@ export interface NetworkConfig {
   matchAddress: `0x${string}` | undefined
   /** Ranked leaderboard contract on this network, or undefined when none is configured. */
   leaderboardAddress: `0x${string}` | undefined
+  /** Which leaderboard contract is deployed here: 1 = recordMatch(won) (Arc Testnet), 2 = recordMatch(matchId, won) (Base Sepolia). */
+  leaderboardVersion: 1 | 2
   /** Below this much leftover on the helper key, "return it" is not offered (it would cost more than it gives back). */
   minSweep: number
   /** Safety factor when pre-funding the helper key: gas prices on some networks jump around more than on others. */
@@ -53,6 +55,12 @@ export function arcAddress(specific: string | undefined, legacy: string | undefi
   return readAddress(specific) ?? readAddress(legacy) ?? deployed
 }
 
+/** 1 or 2 from an environment variable, else the given default. */
+export function readVersion(value: string | undefined, fallback: 1 | 2): 1 | 2 {
+  const v = value?.trim()
+  return v === '1' ? 1 : v === '2' ? 2 : fallback
+}
+
 const env = import.meta.env as Record<string, string | undefined>
 
 export const NETWORKS: Record<NetworkId, NetworkConfig> = {
@@ -67,6 +75,7 @@ export const NETWORKS: Record<NetworkId, NetworkConfig> = {
     faucetHint: 'net.faucet.arc',
     matchAddress: arcAddress(env.VITE_MATCH_ADDRESS_ARC, env.VITE_MATCH_ADDRESS, DEPLOYED.matchContract),
     leaderboardAddress: arcAddress(env.VITE_LEADERBOARD_ADDRESS_ARC, env.VITE_LEADERBOARD_ADDRESS, DEPLOYED.leaderboard),
+    leaderboardVersion: readVersion(env.VITE_LEADERBOARD_VERSION_ARC, 1),
     minSweep: 0.01,
     fundingFactor: 1n,
     accent: '#c6ff3d',
@@ -82,6 +91,7 @@ export const NETWORKS: Record<NetworkId, NetworkConfig> = {
     faucetHint: 'net.faucet.baseSepolia',
     matchAddress: readAddress(env.VITE_MATCH_ADDRESS_BASE_SEPOLIA),
     leaderboardAddress: readAddress(env.VITE_LEADERBOARD_ADDRESS_BASE_SEPOLIA),
+    leaderboardVersion: readVersion(env.VITE_LEADERBOARD_VERSION_BASE_SEPOLIA, 2),
     minSweep: 0.000005,
     fundingFactor: 3n,
     accent: '#5b9dff',

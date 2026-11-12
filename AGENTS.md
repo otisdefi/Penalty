@@ -108,3 +108,9 @@ bun run dev
 - `supabase/functions/check-avatar` (Verify JWT on) reads a picture with the service role, asks the moderation services named in the `MODERATION_PROVIDER` secret (sightengine, openai, azure; strictest answer wins) and applies the verdict through `moderation_claim` / `moderation_decide` (service role only, `supabase/avatars/moderation_part*_of_2.sql`). Keys are Edge Function secrets, never in the repo or the app.
 - The app calls it through `checkAvatar()` in `src/avatar/api.ts` after an upload and after a picture report. Anything unclear or failing leaves the picture pending for the manual review in `admin_pending_pictures`.
 
+## Leaderboard contract versions
+
+- Arc Testnet's leaderboard (`0x1df2…`) is version 1: `recordMatch(bool won)`. Its source is not in git.
+- `contracts/PenaltyLeaderboard.sol` in the repo is version 2: `recordMatch(bytes32 matchId, bool won)`, refusing the same match id twice for a wallet. It is what runs on Base Sepolia (`0x9c6d…`). Reads (`getRecord`, `getTopTen`) are identical.
+- `NetworkConfig.leaderboardVersion` (override with `VITE_LEADERBOARD_VERSION_*`) picks the write call in `SaveResult`. `PenaltyMatch` is the same bytecode on both networks.
+

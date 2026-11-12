@@ -1,13 +1,21 @@
 {
-  "contractAddress": "0x1df2ff3dd51acb1683781dd5d2808ca338047f4c",
-  "network": "ARC-TESTNET",
-  "deployerWalletId": "3c2464b2-8369-52e2-a782-800bbeca5396",
+  "contractAddress": "0x9c6d4bb8e5df7d81c1bfae9d7a32f881c977d6a8",
+  "network": "BASE-SEPOLIA",
+  "deployerWalletId": "3a4483fc-9c83-597f-81e2-bc6cae8cbdb0",
   "contract_code_path": "/home/user/app/contracts/PenaltyLeaderboard.sol",
   "contract_compiled_code_path": "/home/user/app/contracts/out/PenaltyLeaderboard.sol/PenaltyLeaderboard.json",
   "contract_network_and_links": {
-    "Arc Testnet": "https://explorer.testnet.arc.io/address/0x1df2ff3dd51acb1683781dd5d2808ca338047f4c"
+    "Arc Testnet": "https://explorer.testnet.arc.io/address/0x1df2ff3dd51acb1683781dd5d2808ca338047f4c",
+    "Base Sepolia": "https://sepolia.basescan.org/address/0x9c6d4bb8e5df7d81c1bfae9d7a32f881c977d6a8"
   },
   "contract_deployments": [
+    {
+      "chain": "Base Sepolia",
+      "address": "0x9c6d4bb8e5df7d81c1bfae9d7a32f881c977d6a8",
+      "explorerUrl": "https://sepolia.basescan.org/address/0x9c6d4bb8e5df7d81c1bfae9d7a32f881c977d6a8",
+      "txHash": "0x5f54143bd6fdcd295e2b8ab7312289a8bb3017016cdb58a70ac97c8e13fee470",
+      "deployedAt": "2026-11-12T13:50:42.983Z"
+    },
     {
       "chain": "Arc Testnet",
       "address": "0x1df2ff3dd51acb1683781dd5d2808ca338047f4c",

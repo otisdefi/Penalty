@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { ConnectKitButton } from 'connectkit'
 import { ExternalLink, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { leaderboardAbi } from '@/contract'
+import { leaderboardAbi, leaderboardAbiV2, newMatchId } from '@/contract'
 import { explorerTxUrl, useNetwork } from '@/networks'
 import { isUserRejection, parseOnchainError } from '@/lib/errors'
 import { useT } from '@/i18n'
@@ -23,6 +23,8 @@ export function SaveResult({ won, onSaved }: Props) {
   const { isLoading: confirming, isSuccess, isError: receiptFailed } = useWaitForTransactionReceipt({ hash, chainId: net.chainId })
   const queryClient = useQueryClient()
   const [error, setError] = useState<string | null>(null)
+  // Version 2 contracts take a match id. One per result screen: a retry of the same save cannot count twice.
+  const [matchId] = useState(newMatchId)
 
   useEffect(() => {
     if (!isSuccess) return
@@ -36,13 +38,11 @@ export function SaveResult({ won, onSaved }: Props) {
     try {
       // Ask the wallet to move to the selected network first.
       if (chainId !== net.chainId) await switchChainAsync({ chainId: net.chainId })
-      await writeContractAsync({
-        address: net.leaderboardAddress,
-        abi: leaderboardAbi,
-        functionName: 'recordMatch',
-        args: [won],
-        chainId: net.chainId,
-      })
+      if (net.leaderboardVersion === 2) {
+        await writeContractAsync({ address: net.leaderboardAddress, abi: leaderboardAbiV2, functionName: 'recordMatch', args: [matchId, won], chainId: net.chainId })
+      } else {
+        await writeContractAsync({ address: net.leaderboardAddress, abi: leaderboardAbi, functionName: 'recordMatch', args: [won], chainId: net.chainId })
+      }
     } catch (e) {
       if (isUserRejection(e)) return
       const message = parseOnchainError(e)
